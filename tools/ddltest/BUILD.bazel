@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ddltest",
+    srcs = ["main.go"],
+    importpath = "github.com/hawkingrei/gsqlancer/tools/ddltest",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ddltest_test",
+    srcs = ["main_test.go"],
+    embed = [":ddltest"],
+    deps = ["@com_github_pingcap_tidb//testkit"],
+)

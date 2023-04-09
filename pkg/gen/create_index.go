@@ -18,7 +18,7 @@ type TiDBTableGenerator struct {
 }
 
 // GenerateDDLCreateTable rand create table statement
-func (e *TiDBTableGenerator) GenerateDDLCreateTable(index int, node *ast.CreateTableStmt, colTypes []string) (*model.SQL, error) {
+func (e *TiDBTableGenerator) GenerateDDLCreateTable(index int, colTypes []string) (*model.SQL, error) {
 	tree := createTableStmt(e.c)
 
 	stmt, table, err := e.walkDDLCreateTable(index, tree, colTypes)
