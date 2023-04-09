@@ -9,6 +9,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/parser/ast"
+	parsermodel "github.com/pingcap/tidb/parser/model"
 	parserTypes "github.com/pingcap/tidb/parser/types"
 )
 
@@ -39,19 +40,19 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 	idFieldType := parserTypes.NewFieldType(Type2Tp("bigint"))
 	idFieldType.SetFlen(DataType2Len("bigint"))
 	idCol := &ast.ColumnDef{
-		Name:    &ast.ColumnName{Name: model.NewCIStr(idColName)},
+		Name:    &ast.ColumnName{Name: parsermodel.NewCIStr(idColName)},
 		Tp:      idFieldType,
 		Options: []*ast.ColumnOption{randColumnOptionAuto()},
 	}
 	node.Cols = append(node.Cols, idCol)
 	makeConstraintPrimaryKey(node, idColName)
 
-	node.Table.Name = model.NewCIStr(table)
+	node.Table.Name = parsermodel.NewCIStr(table)
 	for _, colType := range colTypes {
 		fieldType := parserTypes.NewFieldType(Type2Tp(colType))
 		fieldType.SetFlen(DataType2Len(colType))
 		node.Cols = append(node.Cols, &ast.ColumnDef{
-			Name: &ast.ColumnName{Name: model.NewCIStr(fmt.Sprintf("col_%s_%d", colType, index))},
+			Name: &ast.ColumnName{Name: parsermodel.NewCIStr(fmt.Sprintf("col_%s_%d", colType, index))},
 			Tp:   fieldType,
 		})
 	}
@@ -100,4 +101,27 @@ func partitionStmt() *ast.PartitionOptions {
 		},
 		Definitions: []*ast.PartitionDefinition{},
 	}
+}
+
+func makeConstraintPrimaryKey(node *ast.CreateTableStmt, column string) {
+	for _, constraint := range node.Constraints {
+		if constraint.Tp == ast.ConstraintPrimaryKey {
+			constraint.Keys = append(constraint.Keys, &ast.IndexPartSpecification{
+				Column: &ast.ColumnName{
+					Name: model.NewCIStr(column),
+				},
+			})
+			return
+		}
+	}
+	node.Constraints = append(node.Constraints, &ast.Constraint{
+		Tp: ast.ConstraintPrimaryKey,
+		Keys: []*ast.IndexPartSpecification{
+			{
+				Column: &ast.ColumnName{
+					Name: model.NewCIStr(column),
+				},
+			},
+		},
+	})
 }
