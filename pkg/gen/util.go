@@ -6,6 +6,7 @@ import (
 
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/format"
+	"github.com/pingcap/tidb/parser/mysql"
 )
 
 // DataType2Len is to convert data type into length
@@ -51,4 +52,26 @@ func BufferOut(node ast.Node) (string, error) {
 		return "", err
 	}
 	return out.String(), nil
+}
+
+// Type2Tp conver type string to tp byte
+// TODO: complete conversion map
+func Type2Tp(t string) byte {
+	switch t {
+	case "int":
+		return mysql.TypeLong
+	case "bigint":
+		return mysql.TypeLonglong
+	case "varchar":
+		return mysql.TypeVarchar
+	case "timestamp":
+		return mysql.TypeTimestamp
+	case "datetime":
+		return mysql.TypeDatetime
+	case "text":
+		return mysql.TypeBlob
+	case "float":
+		return mysql.TypeFloat
+	}
+	return mysql.TypeNull
 }

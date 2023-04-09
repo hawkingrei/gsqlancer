@@ -18,7 +18,7 @@ type TiDBTableGenerator struct {
 }
 
 // GenerateDDLCreateTable rand create table statement
-func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, error) {
+func (e *TiDBTableGenerator) GenerateDDLCreateTable(index int, node *ast.CreateTableStmt, colTypes []string) (*model.SQL, error) {
 	tree := createTableStmt(e.c)
 
 	stmt, table, err := e.walkDDLCreateTable(index, tree, colTypes)
@@ -65,11 +65,12 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 		node.Partition = nil
 	}
 	if node.Partition != nil {
-		if colType := e.walkPartition(index, node.Partition, colTypes); colType != "" {
-			makeConstraintPrimaryKey(node, fmt.Sprintf("col_%s_%d", colType, index))
-		} else {
-			node.Partition = nil
-		}
+		//if colType := e.walkPartition(index, node.Partition, colTypes); colType != "" {
+		//	makeConstraintPrimaryKey(node, fmt.Sprintf("col_%s_%d", colType, index))
+		//} else {
+		//	node.Partition = nil
+		//}
+		node.Partition = nil
 	}
 	sql, err = BufferOut(node)
 	if err != nil {
@@ -108,7 +109,7 @@ func makeConstraintPrimaryKey(node *ast.CreateTableStmt, column string) {
 		if constraint.Tp == ast.ConstraintPrimaryKey {
 			constraint.Keys = append(constraint.Keys, &ast.IndexPartSpecification{
 				Column: &ast.ColumnName{
-					Name: model.NewCIStr(column),
+					Name: parsermodel.NewCIStr(column),
 				},
 			})
 			return
@@ -119,7 +120,7 @@ func makeConstraintPrimaryKey(node *ast.CreateTableStmt, column string) {
 		Keys: []*ast.IndexPartSpecification{
 			{
 				Column: &ast.ColumnName{
-					Name: model.NewCIStr(column),
+					Name: parsermodel.NewCIStr(column),
 				},
 			},
 		},
