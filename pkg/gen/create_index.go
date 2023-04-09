@@ -13,15 +13,23 @@ import (
 	parserTypes "github.com/pingcap/tidb/parser/types"
 )
 
+var allColumnTypes = []string{"int", "float", "varchar"}
+
 type TiDBTableGenerator struct {
 	c *config.Config
 }
 
-// GenerateDDLCreateTable rand create table statement
-func (e *TiDBTableGenerator) GenerateDDLCreateTable(index int, colTypes []string) (*model.SQL, error) {
-	tree := createTableStmt(e.c)
+func NewTiDBTableGenerator(c *config.Config) *TiDBTableGenerator {
+	return &TiDBTableGenerator{
+		c: c,
+	}
+}
 
-	stmt, table, err := e.walkDDLCreateTable(index, tree, colTypes)
+// GenerateDDLCreateTable rand create table statement
+func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, error) {
+
+	tree := createTableStmt(e.c)
+	stmt, table, err := e.walkDDLCreateTable(1, tree, allColumnTypes)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
