@@ -7,6 +7,7 @@ import (
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
+	"github.com/hawkingrei/gsqlancer/pkg/state"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/parser/ast"
 	parsermodel "github.com/pingcap/tidb/parser/model"
@@ -16,12 +17,14 @@ import (
 var allColumnTypes = []string{"int", "float", "varchar"}
 
 type TiDBTableGenerator struct {
-	c *config.Config
+	c           *config.Config
+	globalState *state.TiDBState
 }
 
-func NewTiDBTableGenerator(c *config.Config) *TiDBTableGenerator {
+func NewTiDBTableGenerator(c *config.Config, g *state.TiDBState) *TiDBTableGenerator {
 	return &TiDBTableGenerator{
-		c: c,
+		c:           c,
+		globalState: g,
 	}
 }
 
