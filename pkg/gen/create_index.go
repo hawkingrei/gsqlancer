@@ -59,7 +59,11 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 	makeConstraintPrimaryKey(node, idColName)
 
 	node.Table.Name = parsermodel.NewCIStr(table)
-	for _, colType := range colTypes {
+	min := 2
+	max := 10
+	columnsNum := rand.Intn(max-min+1) + min
+	for i := 0; i < columnsNum; i++ {
+		colType := colTypes[rand.Intn(len(colTypes))]
 		fieldType := parserTypes.NewFieldType(Type2Tp(colType))
 		fieldType.SetFlen(DataType2Len(colType))
 		node.Cols = append(node.Cols, &ast.ColumnDef{
