@@ -3,7 +3,6 @@ package gen
 import (
 	"fmt"
 	"math/rand"
-	"strings"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
@@ -45,8 +44,9 @@ func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, error) {
 }
 
 func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTableStmt, colTypes []string) (sql string, table string, err error) {
-	table = fmt.Sprintf("%s_%s", "table", strings.Join(colTypes, "_"))
-	idColName := fmt.Sprintf("id_%d", index)
+	tid := e.globalState.GenTableID()
+	table = fmt.Sprintf("%s%d", "t", tid)
+	idColName := fmt.Sprintf("idx%d", index)
 
 	idFieldType := parserTypes.NewFieldType(Type2Tp("bigint"))
 	idFieldType.SetFlen(DataType2Len("bigint"))
@@ -63,7 +63,7 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 		fieldType := parserTypes.NewFieldType(Type2Tp(colType))
 		fieldType.SetFlen(DataType2Len(colType))
 		node.Cols = append(node.Cols, &ast.ColumnDef{
-			Name: &ast.ColumnName{Name: parsermodel.NewCIStr(fmt.Sprintf("col_%s_%d", colType, index))},
+			Name: &ast.ColumnName{Name: parsermodel.NewCIStr(fmt.Sprintf("c%d", e.globalState.GenColumn(tid)))},
 			Tp:   fieldType,
 		})
 	}
