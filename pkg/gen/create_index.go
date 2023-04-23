@@ -63,13 +63,8 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 	max := 10
 	columnsNum := rand.Intn(max-min+1) + min
 	for i := 0; i < columnsNum; i++ {
-		colType := colTypes[rand.Intn(len(colTypes))]
-		fieldType := parserTypes.NewFieldType(Type2Tp(colType))
-		fieldType.SetFlen(DataType2Len(colType))
-		node.Cols = append(node.Cols, &ast.ColumnDef{
-			Name: &ast.ColumnName{Name: parsermodel.NewCIStr(fmt.Sprintf("c%d", e.globalState.GenColumn(tid)))},
-			Tp:   fieldType,
-		})
+		col := model.RandGenCoulmn(fmt.Sprintf("c%d", e.globalState.GenColumn(tid)))
+		node.Cols = append(node.Cols, col.GetAst())
 	}
 
 	// Auto_random should only have one primary key
