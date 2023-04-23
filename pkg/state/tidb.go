@@ -13,9 +13,9 @@ const (
 )
 
 type TiDBState struct {
+	tableID    map[uint32]uint32
 	databaseID atomic.Uint32
 	tableIDGen atomic.Uint32
-	tableID    map[uint32]uint32
 }
 
 func NewTiDBState() *TiDBState {

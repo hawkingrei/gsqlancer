@@ -17,26 +17,28 @@ const (
 )
 
 type ddlColumn struct {
-	k         int
-	deleted   atomic.Bool
-	renamed   int32
+	defaultValue any
+	mValue       map[string]any
+	dependency   *ddlColumn
+	rows         *arraylist.List
+	fieldType    string
+
 	name      string
-	fieldType string
+	nameOfGen string
+
+	dependenciedCols []*ddlColumn
+
+	setValue []string //for enum , set data type
 
 	filedTypeM      int //such as:  VARCHAR(10) ,    filedTypeM = 10
 	filedTypeD      int //such as:  DECIMAL(10,5) ,  filedTypeD = 5
 	filedPrecision  int
-	defaultValue    any
-	isPrimaryKey    bool
-	rows            *arraylist.List
+	k               int
 	indexReferences int
 
-	dependenciedCols []*ddlColumn
-	dependency       *ddlColumn
-	mValue           map[string]any
-	nameOfGen        string
-
-	setValue []string //for enum , set data type
+	renamed      int32
+	deleted      atomic.Bool
+	isPrimaryKey bool
 }
 
 func (col *ddlColumn) isDeleted() bool {
@@ -231,7 +233,7 @@ func (col *ddlColumn) randValue() interface{} {
 }
 
 // getDefaultValueString returns a string representation of `defaultValue` according
-// to the type `k` of column.
+// to the type `kind` of column.
 func getDefaultValueString(k int, defaultValue interface{}) string {
 	if k == util.KindBit {
 		return fmt.Sprintf("b'%v'", defaultValue)

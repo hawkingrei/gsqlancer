@@ -27,9 +27,9 @@ const (
 
 // SQL struct
 type SQL struct {
-	SQLType  SQLType
 	SQLStmt  string
 	SQLTable string
+	SQLType  SQLType
 	// ExecTime is for avoid lock watched interference before time out
 	// useful for sleep statement
 	ExecTime int
