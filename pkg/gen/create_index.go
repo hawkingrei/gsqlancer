@@ -63,7 +63,7 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 	max := 10
 	columnsNum := rand.Intn(max-min+1) + min
 	for i := 0; i < columnsNum; i++ {
-		col := model.RandGenCoulmn(fmt.Sprintf("c%d", e.globalState.GenColumn(tid)))
+		col := model.RandGenColumn(fmt.Sprintf("c%d", e.globalState.GenColumn(tid)))
 		node.Cols = append(node.Cols, col.GetAst())
 	}
 

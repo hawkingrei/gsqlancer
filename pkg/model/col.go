@@ -56,7 +56,7 @@ type Column struct {
 	name string
 }
 
-func RandGenCoulmn(name string) *Column {
+func RandGenColumn(name string) *Column {
 	k := supportKind[rand.Intn(len(supportKind))]
 	return &Column{
 		k,
