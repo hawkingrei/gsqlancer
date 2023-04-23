@@ -54,13 +54,18 @@ func Type2Tp(t int) byte {
 type Column struct {
 	k    int
 	name string
+
+	filedTypeM   int //such as:  VARCHAR(10) ,    filedTypeM = 10
+	filedTypeD   int //such as:  DECIMAL(10,5) ,  filedTypeD = 5
+	defaultValue any
+	setValue     []string //for enum , set data type
 }
 
 func RandGenColumn(name string) *Column {
 	k := supportKind[rand.Intn(len(supportKind))]
 	return &Column{
-		k,
-		name,
+		k:    k,
+		name: name,
 	}
 }
 
@@ -70,5 +75,15 @@ func (c *Column) GetAst() *ast.ColumnDef {
 	return &ast.ColumnDef{
 		Name: &ast.ColumnName{Name: parsermodel.NewCIStr(c.name)},
 		Tp:   fieldType,
+	}
+}
+
+func (c *Column) canHaveDefaultValue() bool {
+	switch c.k {
+	case util.KindBLOB, util.KindTINYBLOB, util.KindMEDIUMBLOB, util.KindLONGBLOB, util.KindTEXT,
+		util.KindTINYTEXT, util.KindMEDIUMTEXT, util.KindLONGTEXT, util.KindJSON:
+		return false
+	default:
+		return true
 	}
 }
