@@ -38,6 +38,10 @@ func (c *DBConnect) Close() {
 	c.db.Close()
 }
 
-func (c *DBConnect) GetConnection() (*sql.Conn, error) {
-	return c.db.Conn(c.ctx)
+func (c *DBConnect) GetConnection() (*DBConn, error) {
+	conn, err := c.db.Conn(c.ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &DBConn{conn: conn}, err
 }

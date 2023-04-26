@@ -14,7 +14,7 @@ func (e *Executor) initDatabase() error {
 	if err != nil {
 		return err
 	}
-	log.Info("success to drop database", zap.String("sql", sql))
+
 	sql = fmt.Sprintf("CREATE DATABASE IF NOT EXISTS database%d", id)
 	_, err = e.conn.ExecContext(e.ctx, sql)
 	if err != nil {

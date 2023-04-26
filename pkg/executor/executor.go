@@ -1,9 +1,8 @@
 package executor
 
 import (
-	"database/sql"
-
 	"github.com/hawkingrei/gsqlancer/pkg/config"
+	"github.com/hawkingrei/gsqlancer/pkg/connection"
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/dumpling/context"
 	"go.uber.org/zap"
@@ -16,10 +15,10 @@ type Executor struct {
 	action *TiDBState
 	exitCh chan struct{}
 	ctx    *context.Context
-	conn   *sql.Conn
+	conn   *connection.DBConn
 }
 
-func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *sql.Conn) *Executor {
+func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *connection.DBConn) *Executor {
 	return &Executor{
 		ctx:    context.Background(),
 		action: NewTiDBState(),
