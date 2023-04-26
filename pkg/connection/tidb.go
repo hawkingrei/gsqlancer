@@ -4,37 +4,40 @@ import (
 	"database/sql"
 	"sync"
 
-	"github.com/pingcap/log"
-	"go.uber.org/zap"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/pingcap/tidb/dumpling/context"
 )
 
 // DBConnect wraps db
 type DBConnect struct {
+	ctx context.Context
 	mu  sync.Mutex
 	dsn string
 	db  *sql.DB
 }
 
-func NewDBConnect(config Config) {
-	db, err := sql.Open("mysql", "user:password@/dbname")
+func NewDBConnect(config *Config) *DBConnect {
+	ctx := context.Background()
+	db, err := sql.Open("mysql", config.DSN)
 	if err != nil {
 		panic(err)
 	}
 	db.SetConnMaxLifetime(config.MaxLifetime)
+	return &DBConnect{
+		ctx: *ctx,
+		dsn: config.DSN,
+		db:  db,
+	}
 }
 
 func (c *DBConnect) Ping() {
 	c.db.Ping()
 }
 
-func (c *DBConnect) MustExec(sql string, args ...interface{}) error {
-	_, err := c.db.Exec(sql, args...)
-	if err != nil {
-		log.Error("exec sql failed", zap.String("sql", sql), zap.Error(err))
-	}
-	return err
+func (c *DBConnect) Close() {
+	c.db.Close()
 }
 
-func (c *DBConnect) Query(sql string, args ...interface{}) (*sql.Rows, error) {
-	return c.db.Query(sql, args...)
+func (c *DBConnect) GetConnection() (*sql.Conn, error) {
+	return c.db.Conn(c.ctx)
 }

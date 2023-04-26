@@ -10,6 +10,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		MaxLifetime: 24 * time.Hour,
+		DSN:         "root:@tcp(localhost:4000)/",
 	}
 }
 

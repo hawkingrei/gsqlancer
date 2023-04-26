@@ -18,6 +18,7 @@ func DefaultConfig() *Config {
 		enablePartition: true,
 		concurrency:     8,
 		maxTestTime:     6 * time.Hour,
+		db:              *connection.DefaultConfig(),
 	}
 }
 
@@ -29,8 +30,8 @@ func (c *Config) EnablePartition() bool {
 	return c.enablePartition
 }
 
-func (c *Config) DBConfig() connection.Config {
-	return c.db
+func (c *Config) DBConfig() *connection.Config {
+	return &c.db
 }
 
 func (c *Config) MaxTestTime() time.Duration {

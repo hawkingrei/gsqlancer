@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/emirpasic/gods v1.18.1
+	github.com/go-sql-driver/mysql v1.7.0
 	github.com/juju/errors v0.0.0-20181118221551-089d3ea4e4d5
 	github.com/pingcap/errors v0.11.5-0.20221009092201-b66cddb77c32
 	github.com/pingcap/log v1.1.1-0.20230317032135-a0d097d16e22
@@ -59,7 +60,6 @@ require (
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.0.0 // indirect

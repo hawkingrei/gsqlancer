@@ -19,10 +19,8 @@ type TiDBState struct {
 }
 
 func NewTiDBState() *TiDBState {
-	databaseID := GlobalStatue.GetDatabaseID()
 	return &TiDBState{
-		databaseID: databaseID,
-		tableID:    make(map[uint32]uint32),
+		tableID: make(map[uint32]uint32),
 	}
 }
 
@@ -36,4 +34,9 @@ func (t *TiDBState) GenColumn(tid uint32) uint32 {
 	}
 	t.tableID[tid] += 1
 	return t.tableID[tid]
+}
+
+func (t *TiDBState) GenDatabaseID() uint64 {
+	t.databaseID = GlobalStatue.GetDatabaseID()
+	return t.databaseID
 }
