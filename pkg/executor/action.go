@@ -1,4 +1,4 @@
-package state
+package executor
 
 import "sync/atomic"
 
@@ -14,13 +14,15 @@ const (
 
 type TiDBState struct {
 	tableID    map[uint32]uint32
-	databaseID atomic.Uint32
+	databaseID uint64
 	tableIDGen atomic.Uint32
 }
 
 func NewTiDBState() *TiDBState {
+	databaseID := GlobalStatue.GetDatabaseID()
 	return &TiDBState{
-		tableID: make(map[uint32]uint32),
+		databaseID: databaseID,
+		tableID:    make(map[uint32]uint32),
 	}
 }
 

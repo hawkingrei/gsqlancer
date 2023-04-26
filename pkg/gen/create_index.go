@@ -5,8 +5,8 @@ import (
 	"math/rand"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
+	"github.com/hawkingrei/gsqlancer/pkg/executor"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
-	"github.com/hawkingrei/gsqlancer/pkg/state"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/parser/ast"
 	parsermodel "github.com/pingcap/tidb/parser/model"
@@ -17,10 +17,10 @@ var allColumnTypes = []string{"int", "float", "varchar"}
 
 type TiDBTableGenerator struct {
 	c           *config.Config
-	globalState *state.TiDBState
+	globalState *executor.TiDBState
 }
 
-func NewTiDBTableGenerator(c *config.Config, g *state.TiDBState) *TiDBTableGenerator {
+func NewTiDBTableGenerator(c *config.Config, g *executor.TiDBState) *TiDBTableGenerator {
 	return &TiDBTableGenerator{
 		c:           c,
 		globalState: g,
