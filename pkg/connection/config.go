@@ -3,8 +3,8 @@ package connection
 import "time"
 
 type Config struct {
-	DSN         string
-	MaxLifetime time.Duration // maximum amount of time a connection may be reused
+	DSN         string        `toml:"dsn,omitempty"`
+	MaxLifetime time.Duration `toml:"max_lifetime,omitempty"`
 }
 
 func DefaultConfig() *Config {
