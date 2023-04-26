@@ -1,5 +1,1 @@
 package executor
-
-struct globalStatue {
-
-}

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
+	"github.com/hawkingrei/gsqlancer/pkg/executor"
 	tidbutil "github.com/pingcap/tidb/util"
 )
 
@@ -23,10 +24,8 @@ func NewSQLancer(cfg *config.Config) *SQLancer {
 
 func (s *SQLancer) Run() {
 	for i := 0; i < int(s.cfg.Concurrency()); i++ {
-		s.wg.Add(1)
-		go func() {
-			defer s.wg.Done()
-		}()
+		exec := executor.NewExecutor(i, s.cfg, s.exitCh)
+		s.wg.Run(exec.Run)
 	}
 	s.wg.Run(s.tick)
 }
