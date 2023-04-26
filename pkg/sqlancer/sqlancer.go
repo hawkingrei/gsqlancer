@@ -15,12 +15,18 @@ type SQLancer struct {
 
 func NewSQLancer(cfg *config.Config) *SQLancer {
 	return &SQLancer{
-		cfg: cfg,
+		cfg:    cfg,
+		exitCh: make(chan struct{}),
 	}
 }
 
 func (s *SQLancer) Run() {
-
+	for i := 0; i < int(s.cfg.Concurrency()); i++ {
+		s.wg.Add(1)
+		go func() {
+			defer s.wg.Done()
+		}()
+	}
 }
 
 func (s *SQLancer) Stop() {

@@ -19,11 +19,12 @@ func flagSet() *flag.FlagSet {
 
 func loadmeta(configFile string) (meta *config.Config, err error) {
 	if configFile != "" {
-		_, err = toml.DecodeFile(configFile, &meta)
+		_, err = toml.DecodeFile(configFile, meta)
 		if err != nil {
 			return
 		}
 	}
+	meta = config.DefaultConfig()
 	return
 }
 
