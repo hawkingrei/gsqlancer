@@ -2,17 +2,17 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
 	"github.com/hawkingrei/gsqlancer/pkg/config"
+	"github.com/hawkingrei/gsqlancer/pkg/sqlancer"
+	"github.com/pingcap/tidb/util/signal"
 	"github.com/sirupsen/logrus"
 )
 
-func redpFlagSet() *flag.FlagSet {
+func flagSet() *flag.FlagSet {
 	flagSet := flag.NewFlagSet("gsqlancer", flag.ExitOnError)
-	flagSet.Bool("version", false, "print version string")
 	flagSet.String("config", "", "path to config file")
 	return flagSet
 }
@@ -28,16 +28,20 @@ func loadmeta(configFile string) (meta *config.Config, err error) {
 }
 
 func main() {
-	flagSet := redpFlagSet()
+	flagSet := flagSet()
 	flagSet.Parse(os.Args[1:])
-	if flagSet.Lookup("version").Value.(flag.Getter).Get().(bool) || len(os.Args) == 1 {
-		fmt.Println(version.String())
-		os.Exit(0)
-	}
 	configFile := flagSet.Lookup("config").Value.String()
-	config, err := loadmeta(configFile)
+	cfg, err := loadmeta(configFile)
 	if err != nil {
 		logrus.Error(err.Error())
 		os.Exit(0)
 	}
+	svr := sqlancer.NewSQLancer(cfg)
+	svr.Run()
+	exited := make(chan struct{})
+	signal.SetupSignalHandler(func(_ bool) {
+		svr.Stop()
+		close(exited)
+	})
+	<-exited
 }
