@@ -11,9 +11,9 @@ import (
 // DBConnect wraps db
 type DBConnect struct {
 	ctx context.Context
-	mu  sync.Mutex
-	dsn string
 	db  *sql.DB
+	dsn string
+	mu  sync.Mutex
 }
 
 func NewDBConnect(config *Config) *DBConnect {

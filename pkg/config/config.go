@@ -7,10 +7,10 @@ import (
 )
 
 type Config struct {
-	enablePartition bool              `toml:"enable_partition,omitempty"`
-	concurrency     int32             `toml:"concurrency,omitempty"`
-	maxTestTime     time.Duration     `toml:"max_test_time,omitempty"`
 	db              connection.Config `toml:"db"`
+	maxTestTime     time.Duration     `toml:"max_test_time,omitempty"`
+	concurrency     int32             `toml:"concurrency,omitempty"`
+	enablePartition bool              `toml:"enable_partition,omitempty"`
 }
 
 func DefaultConfig() *Config {

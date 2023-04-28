@@ -12,11 +12,11 @@ import (
 )
 
 type SQLancer struct {
-	wg     tidbutil.WaitGroupWrapper
 	cfg    *config.Config
 	dbConn *connection.DBConnect
 
 	exitCh chan struct{}
+	wg     tidbutil.WaitGroupWrapper
 }
 
 func NewSQLancer(cfg *config.Config) *SQLancer {

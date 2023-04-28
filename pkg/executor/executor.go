@@ -12,7 +12,6 @@ import (
 
 // Executor define test executor
 type Executor struct {
-	id     int
 	cfg    *config.Config
 	action *gen2.TiDBState
 	exitCh chan struct{}
@@ -21,6 +20,7 @@ type Executor struct {
 
 	tables map[string]model.Table
 	gen    generator
+	id     int
 }
 
 func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *connection.DBConn) *Executor {
