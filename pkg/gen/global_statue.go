@@ -1,4 +1,4 @@
-package executor
+package gen
 
 import "sync/atomic"
 

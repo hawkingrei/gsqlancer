@@ -5,7 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
-	"github.com/hawkingrei/gsqlancer/pkg/executor"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/parser/ast"
@@ -17,10 +16,10 @@ var allColumnTypes = []string{"int", "float", "varchar"}
 
 type TiDBTableGenerator struct {
 	c           *config.Config
-	globalState *executor.TiDBState
+	globalState *TiDBState
 }
 
-func NewTiDBTableGenerator(c *config.Config, g *executor.TiDBState) *TiDBTableGenerator {
+func NewTiDBTableGenerator(c *config.Config, g *TiDBState) *TiDBTableGenerator {
 	return &TiDBTableGenerator{
 		c:           c,
 		globalState: g,
@@ -31,7 +30,7 @@ func NewTiDBTableGenerator(c *config.Config, g *executor.TiDBState) *TiDBTableGe
 func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, error) {
 
 	tree := createTableStmt(e.c)
-	stmt, table, err := e.walkDDLCreateTable(1, tree, allColumnTypes)
+	stmt, table, err := e.walkDDLCreateTable(1, tree)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -43,7 +42,7 @@ func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, error) {
 	}, nil
 }
 
-func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTableStmt, colTypes []string) (sql string, table string, err error) {
+func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTableStmt) (sql, table string, err error) {
 	tid := e.globalState.GenTableID()
 	table = fmt.Sprintf("%s%d", "t", tid)
 	idColName := fmt.Sprintf("idx%d", index)
@@ -98,7 +97,7 @@ func createTableStmt(c *config.Config) *ast.CreateTableStmt {
 	}
 	// TODO: config for enable partition
 	// partitionStmt is disabled
-	if rand.Intn(2) == 0 && c.EnablePartition {
+	if rand.Intn(2) == 0 && c.EnablePartition() {
 		createTableNode.Partition = partitionStmt()
 	}
 

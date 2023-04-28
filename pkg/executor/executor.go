@@ -3,6 +3,8 @@ package executor
 import (
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
+	gen2 "github.com/hawkingrei/gsqlancer/pkg/gen"
+	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/dumpling/context"
 	"go.uber.org/zap"
@@ -12,20 +14,25 @@ import (
 type Executor struct {
 	id     int
 	cfg    *config.Config
-	action *TiDBState
+	action *gen2.TiDBState
 	exitCh chan struct{}
 	ctx    *context.Context
 	conn   *connection.DBConn
+
+	tables map[string]model.Table
+	gen    generator
 }
 
 func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *connection.DBConn) *Executor {
+	action := gen2.NewTiDBState()
 	return &Executor{
 		ctx:    context.Background(),
-		action: NewTiDBState(),
+		action: action,
 		cfg:    cfg,
 		conn:   conn,
 		exitCh: exitCh,
 		id:     id,
+		gen:    newGenerator(cfg, action),
 	}
 }
 

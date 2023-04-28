@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
-	"github.com/hawkingrei/gsqlancer/pkg/executor"
 	"github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/testkit"
@@ -16,14 +15,14 @@ func TestDDL(t *testing.T) {
 
 	tk := testkit.NewTestKit(t, store)
 	tk.MustExec("use test")
-	generator := gen.NewTiDBTableGenerator(config.DefaultConfig(), executor.NewTiDBState())
+	generator := gen.NewTiDBTableGenerator(config.DefaultConfig(), gen.NewTiDBState())
 	sql, err := generator.GenerateDDLCreateTable()
 	require.NoError(t, err)
 	tk.MustExec(sql.SQLStmt)
 }
 
 func TestGenerateDDL(t *testing.T) {
-	generator := gen.NewTiDBTableGenerator(config.DefaultConfig(), executor.NewTiDBState())
+	generator := gen.NewTiDBTableGenerator(config.DefaultConfig(), gen.NewTiDBState())
 	for i := 0; i < 200; i++ {
 		sql, err := generator.GenerateDDLCreateTable()
 		require.NoError(t, err)

@@ -1,6 +1,8 @@
-package executor
+package gen
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 type Action int
 
