@@ -27,22 +27,23 @@ func NewTiDBTableGenerator(c *config.Config, g *TiDBState) *TiDBTableGenerator {
 }
 
 // GenerateDDLCreateTable rand create table statement
-func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, error) {
-
+func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, *model.Table, error) {
+	tableBuilder := model.NewTableBuilder()
 	tree := createTableStmt(e.c)
-	stmt, table, err := e.walkDDLCreateTable(1, tree)
+	stmt, table, tableMeta, err := e.walkDDLCreateTable(1, tree, tableBuilder)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, nil, errors.Trace(err)
 	}
 
 	return &model.SQL{
 		SQLType:  model.SQLTypeDDLCreateTable,
 		SQLTable: table,
 		SQLStmt:  stmt,
-	}, nil
+	}, tableMeta, nil
 }
 
-func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTableStmt) (sql, table string, err error) {
+func (e *TiDBTableGenerator) walkDDLCreateTable(index int,
+	node *ast.CreateTableStmt, tableBuilder *model.TableBuilder) (sql, table string, tableMeta *model.Table, err error) {
 
 	tid := e.globalState.GenTableID()
 	table = fmt.Sprintf("%s%d", "t", tid)
@@ -55,6 +56,7 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 		Tp:      idFieldType,
 		Options: []*ast.ColumnOption{randColumnOptionAuto()},
 	}
+	tableBuilder.AddColumn(idCol)
 	node.Cols = append(node.Cols, idCol)
 	makeConstraintPrimaryKey(node, idColName)
 
@@ -82,11 +84,12 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTable
 		//}
 		node.Partition = nil
 	}
+	tableMeta = tableBuilder.Build()
 	sql, err = BufferOut(node)
 	if err != nil {
-		return "", "", err
+		return "", "", nil, errors.Trace(err)
 	}
-	return sql, table, errors.Trace(err)
+	return sql, table, tableMeta, errors.Trace(err)
 }
 
 func createTableStmt(c *config.Config) *ast.CreateTableStmt {
