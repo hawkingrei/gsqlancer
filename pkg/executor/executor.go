@@ -42,4 +42,11 @@ func (e *Executor) Run() {
 		log.Error("fail to init database", zap.Error(err))
 	}
 	log.Info("init database success", zap.Int("id", e.id))
+	for {
+		select {
+		case <-e.exitCh:
+			return
+		default:
+		}
+	}
 }

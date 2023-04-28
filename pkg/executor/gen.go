@@ -14,3 +14,7 @@ func newGenerator(c *config.Config, g *gen.TiDBState) generator {
 		tableGen: gen.NewTiDBTableGenerator(c, g),
 	}
 }
+
+func (g *generator) CreateTable() {
+	g.tableGen.GenerateDDLCreateTable()
+}
