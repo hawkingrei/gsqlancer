@@ -8,7 +8,7 @@ type SessionMeta struct {
 
 func NewSessionMeta() *SessionMeta {
 	return &SessionMeta{
-		tables: make(map[string]Table),
+		tables: make(map[string]*Table),
 	}
 }
 
