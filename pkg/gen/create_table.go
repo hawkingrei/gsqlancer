@@ -43,6 +43,7 @@ func (e *TiDBTableGenerator) GenerateDDLCreateTable() (*model.SQL, error) {
 }
 
 func (e *TiDBTableGenerator) walkDDLCreateTable(index int, node *ast.CreateTableStmt) (sql, table string, err error) {
+
 	tid := e.globalState.GenTableID()
 	table = fmt.Sprintf("%s%d", "t", tid)
 	idColName := fmt.Sprintf("idx%d", index)

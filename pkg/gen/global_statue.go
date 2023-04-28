@@ -9,8 +9,8 @@ import (
 var GlobalStatue = &globalStatue{}
 
 type globalStatue struct {
-	databaseID  atomic.Uint64
 	errorIgnore errors.ErrorIgnore
+	databaseID  atomic.Uint64
 }
 
 func (g *globalStatue) SetErrorIgnore(e errors.ErrorIgnore) {
