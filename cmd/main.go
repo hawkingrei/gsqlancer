@@ -6,6 +6,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/hawkingrei/gsqlancer/pkg/config"
+	"github.com/hawkingrei/gsqlancer/pkg/errors"
+	"github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/hawkingrei/gsqlancer/pkg/sqlancer"
 	"github.com/pingcap/tidb/util/signal"
 	"github.com/sirupsen/logrus"
@@ -37,6 +39,7 @@ func main() {
 		logrus.Error(err.Error())
 		os.Exit(0)
 	}
+	gen.GlobalStatue.SetErrorIgnore(errors.NewTiDBErrorIgnore())
 	svr := sqlancer.NewSQLancer(cfg)
 	svr.Run()
 	exited := make(chan struct{})
