@@ -27,12 +27,17 @@ const (
 
 // SQL struct
 type SQL struct {
-	SQLStmt  string
+	SQLStmt  string `json:"sql_stmt"`
 	SQLTable string
 	SQLType  SQLType
 	// ExecTime is for avoid lock watched interference before time out
 	// useful for sleep statement
 	ExecTime int
+	Fail     bool `json:"fail"`
+}
+
+func (s *SQL) SetFail() {
+	s.Fail = true
 }
 
 func (t SQLType) String() string {

@@ -16,7 +16,7 @@ func TestDDL(t *testing.T) {
 	tk := testkit.NewTestKit(t, store)
 	tk.MustExec("use test")
 	generator := gen.NewTiDBTableGenerator(config.DefaultConfig(), gen.NewTiDBState())
-	sql, err := generator.GenerateDDLCreateTable()
+	sql, _, err := generator.GenerateDDLCreateTable()
 	require.NoError(t, err)
 	tk.MustExec(sql.SQLStmt)
 }
@@ -24,7 +24,7 @@ func TestDDL(t *testing.T) {
 func TestGenerateDDL(t *testing.T) {
 	generator := gen.NewTiDBTableGenerator(config.DefaultConfig(), gen.NewTiDBState())
 	for i := 0; i < 200; i++ {
-		sql, err := generator.GenerateDDLCreateTable()
+		sql, _, err := generator.GenerateDDLCreateTable()
 		require.NoError(t, err)
 		log.Info(sql.SQLStmt)
 	}
