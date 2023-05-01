@@ -6,7 +6,6 @@ import (
 	gen2 "github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
-	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/dumpling/context"
 	"go.uber.org/zap"
 )
@@ -40,9 +39,9 @@ func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *connect
 func (e *Executor) Run() {
 	err := e.initDatabase()
 	if err != nil {
-		log.Error("fail to init database", zap.Error(err))
+		logging.StatusLog().Error("fail to init database", zap.Error(err))
 	}
-	logging.SQLLOG().Info("init database success", zap.Int("id", e.id))
+	logging.StatusLog().Info("init database success", zap.Int("id", e.id))
 
 	for {
 		select {
