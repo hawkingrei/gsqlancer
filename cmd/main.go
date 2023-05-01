@@ -9,6 +9,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/errors"
 	"github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/hawkingrei/gsqlancer/pkg/sqlancer"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/util/signal"
 	"github.com/sirupsen/logrus"
 )
@@ -39,6 +40,11 @@ func main() {
 		logrus.Error(err.Error())
 		os.Exit(0)
 	}
+	logger, err := logging.NewStdLogger(cfg.Log())
+	if err != nil {
+		panic(err)
+	}
+	logging.SetGlobalLogger(logger)
 	gen.GlobalStatue.SetErrorIgnore(errors.NewTiDBErrorIgnore())
 	svr := sqlancer.NewSQLancer(cfg)
 	svr.Run()
@@ -48,4 +54,5 @@ func main() {
 		close(exited)
 	})
 	<-exited
+	logger.Stop()
 }

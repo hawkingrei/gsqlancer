@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 )
 
 type Config struct {
@@ -11,6 +12,7 @@ type Config struct {
 	maxTestTime     time.Duration     `toml:"max_test_time,omitempty"`
 	concurrency     int32             `toml:"concurrency,omitempty"`
 	enablePartition bool              `toml:"enable_partition,omitempty"`
+	log             logging.LogConfig `toml:"log"`
 }
 
 func DefaultConfig() *Config {
@@ -36,4 +38,8 @@ func (c *Config) DBConfig() *connection.Config {
 
 func (c *Config) MaxTestTime() time.Duration {
 	return c.maxTestTime
+}
+
+func (c *Config) Log() *logging.LogConfig {
+	return &c.log
 }
