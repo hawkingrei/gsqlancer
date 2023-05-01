@@ -16,8 +16,8 @@ type Logger interface {
 
 var _ Logger = &StdLogger{}
 
-func SetGlobalLogger(log *Logger) {
-	globalLogger.Store(log)
+func SetGlobalLogger(log Logger) {
+	globalLogger.Store(&log)
 }
 
 func StatusLog() *zap.Logger {

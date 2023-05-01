@@ -5,6 +5,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
 	gen2 "github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/dumpling/context"
 	"go.uber.org/zap"
@@ -41,7 +42,8 @@ func (e *Executor) Run() {
 	if err != nil {
 		log.Error("fail to init database", zap.Error(err))
 	}
-	log.Info("init database success", zap.Int("id", e.id))
+	logging.SQLLOG().Info("init database success", zap.Int("id", e.id))
+
 	for {
 		select {
 		case <-e.exitCh:
