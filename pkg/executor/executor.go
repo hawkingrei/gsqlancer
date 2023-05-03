@@ -19,6 +19,7 @@ type Executor struct {
 	conn        *connection.DBConn
 	sessionMeta *model.SessionMeta
 	gen         generator
+	status      *ExecutorStat
 	id          int
 }
 
@@ -32,6 +33,7 @@ func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *connect
 		exitCh:      exitCh,
 		id:          id,
 		sessionMeta: model.NewSessionMeta(),
+		status:      NewExecutorStat(),
 		gen:         newGenerator(cfg, action),
 	}
 }
@@ -49,5 +51,6 @@ func (e *Executor) Run() {
 			return
 		default:
 		}
+
 	}
 }
