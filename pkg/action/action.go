@@ -18,6 +18,13 @@ func (a *Action) Next() {
 	switch a.action {
 	case ActionAnalyze:
 	case ActionCreateTable:
+	}
+}
 
+func (a *Action) Do() {
+	switch a.action {
+	case ActionAnalyze:
+
+	case ActionCreateTable:
 	}
 }
