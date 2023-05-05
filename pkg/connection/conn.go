@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/hawkingrei/gsqlancer/pkg/model"
-	"github.com/pingcap/log"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"go.uber.org/zap"
 )
 
@@ -20,18 +20,21 @@ func (c *DBConn) Close() error {
 func (c *DBConn) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	result, err := c.conn.ExecContext(ctx, query, args...)
 	if err != nil {
-		log.Error("fail to execute sql", zap.String("sql", query), zap.Error(err))
+		logging.SQLLOG().Error("fail to execute sql", zap.String("sql", query), zap.Error(err))
 		return nil, err
 	}
-	log.Info("success to execute sql", zap.String("sql", query))
+	logging.SQLLOG().Info("success to execute sql", zap.String("sql", query))
 	return result, err
 }
 
 func (c *DBConn) MustExec(ctx context.Context, query *model.SQL) error {
-	_, err := c.ExecContext(ctx, query.SQLStmt)
+	_, err := c.conn.ExecContext(ctx, query.SQLStmt)
 	if err != nil {
-		log.Error("fail to execute sql",
+		logging.SQLLOG().Error("fail to execute sql",
 			zap.String("type", query.SQLType.String()), zap.String("sql", query.SQLStmt), zap.Error(err))
+		return err
 	}
-	return err
+	logging.SQLLOG().Info("success to execute sql",
+		zap.String("type", query.SQLType.String()), zap.String("sql", query.SQLStmt))
+	return nil
 }
