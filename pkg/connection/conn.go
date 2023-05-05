@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/pingcap/log"
 	"go.uber.org/zap"
 )
@@ -24,4 +25,13 @@ func (c *DBConn) ExecContext(ctx context.Context, query string, args ...interfac
 	}
 	log.Info("success to execute sql", zap.String("sql", query))
 	return result, err
+}
+
+func (c *DBConn) MustExec(ctx context.Context, query *model.SQL) error {
+	_, err := c.ExecContext(ctx, query.SQLStmt)
+	if err != nil {
+		log.Error("fail to execute sql",
+			zap.String("type", query.SQLType.String()), zap.String("sql", query.SQLStmt), zap.Error(err))
+	}
+	return err
 }

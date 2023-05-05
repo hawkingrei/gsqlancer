@@ -8,11 +8,11 @@ import (
 )
 
 type Config struct {
+	log             logging.LogConfig `toml:"log"`
 	db              connection.Config `toml:"db"`
 	maxTestTime     time.Duration     `toml:"max_test_time,omitempty"`
 	concurrency     int32             `toml:"concurrency,omitempty"`
 	enablePartition bool              `toml:"enable_partition,omitempty"`
-	log             logging.LogConfig `toml:"log"`
 }
 
 func DefaultConfig() *Config {

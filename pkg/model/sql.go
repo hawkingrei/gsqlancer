@@ -23,6 +23,7 @@ const (
 	SQLTypeSleep
 	SQLTypeCreateDatabase
 	SQLTypeDropDatabase
+	SQLTypeAnalyzeTable
 )
 
 // SQL struct

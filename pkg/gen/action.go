@@ -1,7 +1,11 @@
 package gen
 
 import (
+	"fmt"
+	"math/rand"
 	"sync/atomic"
+
+	"golang.org/x/exp/maps"
 )
 
 type Action int
@@ -41,4 +45,12 @@ func (t *TiDBState) GenColumn(tid uint32) uint32 {
 func (t *TiDBState) GenDatabaseID() uint64 {
 	t.databaseID = GlobalStatue.GetDatabaseID()
 	return t.databaseID
+}
+
+func (t *TiDBState) RandGetTableID() string {
+	ids := maps.Keys(t.tableID)
+	if len(ids) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("t%d", ids[rand.Intn(len(ids))])
 }

@@ -3,7 +3,7 @@ package executor
 import (
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
-	gen2 "github.com/hawkingrei/gsqlancer/pkg/gen"
+	"github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/dumpling/context"
@@ -13,7 +13,7 @@ import (
 // Executor define test executor
 type Executor struct {
 	cfg         *config.Config
-	action      *gen2.TiDBState
+	state       *gen.TiDBState
 	exitCh      chan struct{}
 	ctx         *context.Context
 	conn        *connection.DBConn
@@ -21,13 +21,14 @@ type Executor struct {
 	gen         generator
 	status      *ExecutorStat
 	id          int
+	action      ActionType
 }
 
 func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *connection.DBConn) *Executor {
-	action := gen2.NewTiDBState()
+	action := gen.NewTiDBState()
 	return &Executor{
 		ctx:         context.Background(),
-		action:      action,
+		state:       action,
 		cfg:         cfg,
 		conn:        conn,
 		exitCh:      exitCh,

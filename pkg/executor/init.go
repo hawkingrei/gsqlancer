@@ -8,7 +8,7 @@ import (
 )
 
 func (e *Executor) initDatabase() error {
-	id := e.action.GenDatabaseID()
+	id := e.state.GenDatabaseID()
 	sql := fmt.Sprintf("DROP DATABASE IF EXISTS database%d", id)
 	_, err := e.conn.ExecContext(e.ctx, sql)
 	if err != nil {

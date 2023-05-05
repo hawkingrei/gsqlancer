@@ -1,9 +1,30 @@
 package gen
 
-import "github.com/hawkingrei/gsqlancer/pkg/model"
+import (
+	"github.com/hawkingrei/gsqlancer/pkg/config"
+	"github.com/hawkingrei/gsqlancer/pkg/model"
+)
 
-type AnalyzeTable struct{}
+type TiDBAnalyzeTable struct {
+	c           *config.Config
+	globalState *TiDBState
+}
 
-func (a *AnalyzeTable) Generate() (*model.SQL, *model.Table, error) {
+func NewAnalyzeTable(c *config.Config, globalState *TiDBState) *TiDBAnalyzeTable {
+	return &TiDBAnalyzeTable{
+		c:           c,
+		globalState: globalState,
+	}
+}
 
+func (a *TiDBAnalyzeTable) GenerateAnalyzeTables() *model.SQL {
+	if t := a.globalState.RandGetTableID(); t != "" {
+		return &model.SQL{
+			SQLType:  model.SQLTypeAnalyzeTable,
+			SQLTable: t,
+			SQLStmt:  "analyze table " + t,
+		}
+
+	}
+	return nil
 }
