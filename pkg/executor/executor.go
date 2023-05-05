@@ -52,6 +52,7 @@ func (e *Executor) Run() {
 			return
 		default:
 		}
-
+		e.Next()
+		e.Do()
 	}
 }

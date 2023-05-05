@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	log             logging.LogConfig `toml:"log"`
-	db              connection.Config `toml:"db"`
-	maxTestTime     time.Duration     `toml:"max_test_time,omitempty"`
-	concurrency     int32             `toml:"concurrency,omitempty"`
-	enablePartition bool              `toml:"enable_partition,omitempty"`
+	log                   logging.LogConfig `toml:"log"`
+	db                    connection.Config `toml:"db"`
+	maxTestTime           time.Duration     `toml:"max_test_time,omitempty"`
+	concurrency           int32             `toml:"concurrency,omitempty"`
+	enablePartition       bool              `toml:"enable_partition,omitempty"`
+	enableTiflashReplicas bool              `toml:"enable_tiflash_replicas,omitempty"`
 }
 
 func DefaultConfig() *Config {
@@ -30,6 +31,10 @@ func (c *Config) Concurrency() int32 {
 
 func (c *Config) EnablePartition() bool {
 	return c.enablePartition
+}
+
+func (c *Config) EnableTiflashReplicas() bool {
+	return c.enableTiflashReplicas
 }
 
 func (c *Config) DBConfig() *connection.Config {

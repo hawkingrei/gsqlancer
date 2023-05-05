@@ -10,6 +10,10 @@ type Table struct {
 	indexes []*ast.IndexPartSpecification // Used for PRIMARY KEY, UNIQUE, ......
 }
 
+func (t *Table) Name() string {
+	return t.name
+}
+
 type TableBuilder struct {
 	table *Table
 }
@@ -21,6 +25,11 @@ func NewTableBuilder() *TableBuilder {
 			indexes: make([]*ast.IndexPartSpecification, 0),
 		},
 	}
+}
+
+func (t *TableBuilder) SetName(name string) *TableBuilder {
+	t.table.name = name
+	return t
 }
 
 func (t *TableBuilder) AddColumn(column *ast.ColumnDef) *TableBuilder {

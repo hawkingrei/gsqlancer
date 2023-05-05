@@ -47,6 +47,7 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int,
 
 	tid := e.globalState.GenTableID()
 	table = fmt.Sprintf("%s%d", "t", tid)
+	tableBuilder.SetName(table)
 	idColName := fmt.Sprintf("idx%d", index)
 
 	idFieldType := parserTypes.NewFieldType(Type2Tp("bigint"))
