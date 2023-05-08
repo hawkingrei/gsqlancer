@@ -61,3 +61,18 @@ func randNum(n int) []byte {
 	}
 	return b
 }
+
+func RdBool() bool {
+	return rand.Intn(2) == 1
+}
+
+// RdRange rand int in range
+func RdRange(n, m int64) int64 {
+	if n == m {
+		return n
+	}
+	if m < n {
+		n, m = m, n
+	}
+	return n + rand.Int63n(m-n)
+}

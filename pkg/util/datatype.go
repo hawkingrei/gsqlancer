@@ -14,8 +14,13 @@
 package util
 
 import (
+	"fmt"
 	"math/rand"
+	"regexp"
 	"time"
+
+	tidb_types "github.com/pingcap/tidb/types"
+	parser_driver "github.com/pingcap/tidb/types/parser_driver"
 )
 
 // Kind constants.
@@ -380,4 +385,59 @@ func typeNeedQuota(k int) bool {
 		return true
 	}
 	return false
+}
+
+// ConvertToBoolOrNull -1 NULL; 0 false; 1 true
+func ConvertToBoolOrNull(a parser_driver.ValueExpr) int8 {
+	switch a.Kind() {
+	case tidb_types.KindNull:
+		return -1
+	case tidb_types.KindInt64:
+		if a.GetValue().(int64) != 0 {
+			return 1
+		}
+		return 0
+	case tidb_types.KindUint64:
+		if a.GetValue().(uint64) != 0 {
+			return 1
+		}
+		return 0
+	case tidb_types.KindFloat32:
+		if a.GetFloat32() == 0 {
+			return 0
+		}
+		return 1
+	case tidb_types.KindFloat64:
+		if a.GetFloat64() == 0 {
+			return 0
+		}
+		return 1
+	case tidb_types.KindString:
+		s := a.GetValue().(string)
+		re, _ := regexp.Compile(`^[-+]?[0-9]*\.?[0-9]+`)
+		matchall := re.FindAllString(s, -1)
+		if len(matchall) == 0 {
+			return 0
+		}
+		numStr := matchall[0]
+		match, _ := regexp.MatchString(`^[-+]?0*\.?0+$`, numStr)
+		if match {
+			return 0
+		}
+		return 1
+	case tidb_types.KindMysqlDecimal:
+		d := a.GetMysqlDecimal()
+		if d.IsZero() {
+			return 0
+		}
+		return 1
+	case tidb_types.KindMysqlTime:
+		t := a.GetMysqlTime()
+		if t.IsZero() {
+			return 0
+		}
+		return 1
+	default:
+		panic(fmt.Sprintf("unreachable kind: %d", a.Kind()))
+	}
 }

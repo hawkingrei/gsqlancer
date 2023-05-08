@@ -14,6 +14,10 @@ func (t *Table) Name() string {
 	return t.name
 }
 
+func (t *Table) Index() []*ast.IndexPartSpecification {
+	return t.indexes
+}
+
 type TableBuilder struct {
 	table *Table
 }
