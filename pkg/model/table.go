@@ -18,6 +18,17 @@ func (t *Table) Index() []*ast.IndexPartSpecification {
 	return t.indexes
 }
 
+func (t *Table) Rename(name string) *Table {
+	table := NewTableBuilder().SetName(name)
+	for _, column := range t.columns {
+		table.AddColumn(column)
+	}
+	for _, index := range t.indexes {
+		table.AddIndex(index)
+	}
+	return table.Build()
+}
+
 type TableBuilder struct {
 	table *Table
 }

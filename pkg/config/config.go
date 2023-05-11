@@ -14,6 +14,10 @@ type Config struct {
 	concurrency           int32             `toml:"concurrency,omitempty"`
 	enablePartition       bool              `toml:"enable_partition,omitempty"`
 	enableTiflashReplicas bool              `toml:"enable_tiflash_replicas,omitempty"`
+	selectDepth           int               `toml:"select_depth,omitempty"`
+	IsPQSMode             bool
+	IsNoRECMode           bool
+	EnableLeftRightJoin   bool
 }
 
 func DefaultConfig() *Config {
