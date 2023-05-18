@@ -1,16 +1,51 @@
 package model
 
-import "github.com/pingcap/tidb/parser/ast"
+import (
+	"fmt"
+
+	"github.com/pingcap/tidb/parser/ast"
+	"github.com/pingcap/tidb/parser/model"
+	"github.com/pingcap/tidb/types"
+)
+
+type Column struct {
+	ColumnDef  *ast.ColumnDef
+	Table      model.CIStr
+	AliasTable model.CIStr
+	AliasName  model.CIStr
+}
+
+func NewColumn(def *ast.ColumnDef) *Column {
+	return &Column{
+		ColumnDef: def,
+	}
+}
+
+func (c *Column) Type() *types.FieldType {
+	return c.ColumnDef.Tp
+}
+
+func (c *Column) Name() string {
+	return c.ColumnDef.Name.String()
+}
+
+func (c *Column) String() string {
+	return fmt.Sprintf("%s.%s", c.Table, c.Name)
+}
 
 type Table struct {
-	Refer   *ast.ReferenceDef // Used for foreign key.
-	Option  *ast.IndexOption  // Index Options
-	name    string
-	columns []*ast.ColumnDef
-	indexes []*ast.IndexPartSpecification // Used for PRIMARY KEY, UNIQUE, ......
+	Refer     *ast.ReferenceDef // Used for foreign key.
+	Option    *ast.IndexOption  // Index Options
+	name      string
+	AliasName model.CIStr
+	columns   []*Column
+	indexes   []*ast.IndexPartSpecification // Used for PRIMARY KEY, UNIQUE, ......
 }
 
 func (t *Table) Name() string {
+	if t.name == "" {
+		return t.AliasName.String()
+	}
 	return t.name
 }
 
@@ -29,6 +64,10 @@ func (t *Table) Rename(name string) *Table {
 	return table.Build()
 }
 
+func (t *Table) Columns() []*Column {
+	return t.columns
+}
+
 type TableBuilder struct {
 	table *Table
 }
@@ -36,7 +75,7 @@ type TableBuilder struct {
 func NewTableBuilder() *TableBuilder {
 	return &TableBuilder{
 		table: &Table{
-			columns: make([]*ast.ColumnDef, 0),
+			columns: make([]*Column, 0),
 			indexes: make([]*ast.IndexPartSpecification, 0),
 		},
 	}
@@ -44,10 +83,11 @@ func NewTableBuilder() *TableBuilder {
 
 func (t *TableBuilder) SetName(name string) *TableBuilder {
 	t.table.name = name
+	t.table.AliasName = model.NewCIStr(name)
 	return t
 }
 
-func (t *TableBuilder) AddColumn(column *ast.ColumnDef) *TableBuilder {
+func (t *TableBuilder) AddColumn(column *Column) *TableBuilder {
 	t.table.columns = append(t.table.columns, column)
 	return t
 }

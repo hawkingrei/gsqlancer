@@ -51,26 +51,24 @@ func Type2Tp(t int) byte {
 	return mysql.TypeNull
 }
 
-type Column struct {
+type _Column struct {
 	defaultValue any
 	name         string
-
-	setValue []string //for enum , set data type
-	kind     int
-
-	filedTypeM int //such as:  VARCHAR(10) ,    filedTypeM = 10
-	filedTypeD int //such as:  DECIMAL(10,5) ,  filedTypeD = 5
+	setValue     []string //for enum , set data type
+	kind         int
+	filedTypeM   int //such as:  VARCHAR(10) ,    filedTypeM = 10
+	filedTypeD   int //such as:  DECIMAL(10,5) ,  filedTypeD = 5
 }
 
-func RandGenColumn(name string) *Column {
+func RandGenColumn(name string) *_Column {
 	k := supportKind[rand.Intn(len(supportKind))]
-	return &Column{
+	return &_Column{
 		kind: k,
 		name: name,
 	}
 }
 
-func (c *Column) GetAst() *ast.ColumnDef {
+func (c *_Column) GetAst() *ast.ColumnDef {
 	fieldType := parserTypes.NewFieldType(Type2Tp(c.kind))
 	//fieldType.SetFlen(DataType2Len(colType))
 	return &ast.ColumnDef{
@@ -79,7 +77,7 @@ func (c *Column) GetAst() *ast.ColumnDef {
 	}
 }
 
-func (c *Column) canHaveDefaultValue() bool {
+func (c *_Column) canHaveDefaultValue() bool {
 	switch c.kind {
 	case util.KindBLOB, util.KindTINYBLOB, util.KindMEDIUMBLOB, util.KindLONGBLOB, util.KindTEXT,
 		util.KindTINYTEXT, util.KindMEDIUMTEXT, util.KindLONGTEXT, util.KindJSON:

@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"sync/atomic"
 
+	"github.com/hawkingrei/gsqlancer/pkg/connection"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"golang.org/x/exp/maps"
 )
@@ -20,13 +21,16 @@ const (
 )
 
 type TiDBState struct {
-	tableID       map[string]uint32 // tableID  -> columnID
-	tableMeta     map[string]*model.Table
-	databaseID    uint64
-	tableIDGen    atomic.Uint32
-	resultTable   []*model.Table
-	tmpTableIDGen atomic.Uint32
-	tableAlias    map[string]string
+	tableID         map[string]uint32 // tableID  -> columnID
+	tableMeta       map[string]*model.Table
+	databaseID      uint64
+	tableIDGen      atomic.Uint32
+	resultTable     []*model.Table
+	InUsedTable     []*model.Table
+	tmpTableIDGen   atomic.Uint32
+	TableAlias      map[string]string
+	PivotRows       map[string]*connection.QueryItem
+	unwrapPivotRows map[string]interface{}
 }
 
 func NewTiDBState() *TiDBState {
@@ -95,5 +99,9 @@ func (t *TiDBState) CreateTmpTable() string {
 }
 
 func (t *TiDBState) SetTableAlias(table string, alias string) {
-	t.tableAlias[table] = alias
+	t.TableAlias[table] = alias
+}
+
+func (t *TiDBState) GetInUsedTable() []*model.Table {
+	return t.InUsedTable
 }

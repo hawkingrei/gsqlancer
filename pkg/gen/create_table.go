@@ -57,7 +57,7 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int,
 		Tp:      idFieldType,
 		Options: []*ast.ColumnOption{randColumnOptionAuto()},
 	}
-	tableBuilder.AddColumn(idCol)
+	tableBuilder.AddColumn(model.NewColumn(idCol))
 	node.Cols = append(node.Cols, idCol)
 	makeConstraintPrimaryKey(node, idColName)
 

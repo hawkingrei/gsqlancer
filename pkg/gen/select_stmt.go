@@ -11,12 +11,14 @@ import (
 type TiDBSelectStmtGen struct {
 	c           *config.Config
 	globalState *TiDBState
+	gen         *Generator
 }
 
 func NewTiDBSelectStmtGen(c *config.Config, g *TiDBState) *TiDBSelectStmtGen {
 	return &TiDBSelectStmtGen{
 		c:           c,
 		globalState: g,
+		gen:         NewGenerator(c, g),
 	}
 }
 

@@ -18,6 +18,8 @@ type Config struct {
 	IsPQSMode             bool
 	IsNoRECMode           bool
 	EnableLeftRightJoin   bool
+	IsInUpdateDeleteStmt  bool
+	IsInExprIndex         bool
 }
 
 func DefaultConfig() *Config {
