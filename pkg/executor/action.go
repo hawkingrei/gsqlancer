@@ -10,6 +10,8 @@ type ActionType int
 const (
 	ActionAnalyzeStmt ActionType = iota
 	ActionCreateTableStmt
+	ActionInsertTableStmt
+	ActionSelectStmt
 
 	defaultTiflashReplicasCnt = 1
 )
@@ -19,6 +21,10 @@ func (e *Executor) Next() {
 	case ActionAnalyzeStmt:
 		e.action = ActionCreateTableStmt
 	case ActionCreateTableStmt:
+		e.action = ActionAnalyzeStmt
+	case ActionInsertTableStmt:
+		e.action = ActionSelectStmt
+	case ActionSelectStmt:
 		e.action = ActionAnalyzeStmt
 	}
 }
@@ -39,5 +45,6 @@ func (e *Executor) Do() {
 		if e.cfg.EnableTiflashReplicas() {
 			e.gen.TiflashReplicaStmt(table.Name(), defaultTiflashReplicasCnt)
 		}
+
 	}
 }
