@@ -15,11 +15,14 @@ type Config struct {
 	enablePartition       bool              `toml:"enable_partition,omitempty"`
 	enableTiflashReplicas bool              `toml:"enable_tiflash_replicas,omitempty"`
 	selectDepth           int               `toml:"select_depth,omitempty"`
-	IsPQSMode             bool
-	IsNoRECMode           bool
-	EnableLeftRightJoin   bool
-	IsInUpdateDeleteStmt  bool
-	IsInExprIndex         bool
+
+	EnablePQSApproach    bool
+	EnableNoRECApproach  bool
+	EnableTLPApproach    bool
+	ViewCount            int
+	EnableLeftRightJoin  bool
+	IsInUpdateDeleteStmt bool
+	IsInExprIndex        bool
 }
 
 func DefaultConfig() *Config {

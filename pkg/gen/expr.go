@@ -158,7 +158,7 @@ func (g *Generator) columnExpr(argTp uint64) (*ast.ColumnNameExpr, parserdriver.
 
 	// no pivot rows
 	// so value is generate by random
-	if !g.c.IsPQSMode || g.c.IsNoRECMode || g.c.IsInUpdateDeleteStmt {
+	if !g.c.EnablePQSApproach || g.c.EnableNoRECApproach || g.c.IsInUpdateDeleteStmt {
 		tp := util.TransStringType(typeStr)
 		_, val = g.constValueExpr(tp)
 		return col, val, nil

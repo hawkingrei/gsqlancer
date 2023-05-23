@@ -9,17 +9,19 @@ import (
 
 func (e *Executor) initDatabase() error {
 	id := e.state.GenDatabaseID()
-	sql := fmt.Sprintf("DROP DATABASE IF EXISTS database%d", id)
+	e.useDatabase = fmt.Sprintf("database%d", id)
+	sql := fmt.Sprintf("DROP DATABASE IF EXISTS %s", e.useDatabase)
 	_, err := e.conn.ExecContext(e.ctx, sql)
 	if err != nil {
 		return err
 	}
 
-	sql = fmt.Sprintf("CREATE DATABASE IF NOT EXISTS database%d", id)
+	sql = fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", e.useDatabase)
 	_, err = e.conn.ExecContext(e.ctx, sql)
 	if err != nil {
 		return err
 	}
 	log.Info("success to create database", zap.String("sql", sql))
+	_, err = e.conn.ExecContext(e.ctx, "use "+e.useDatabase)
 	return err
 }
