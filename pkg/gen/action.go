@@ -105,3 +105,8 @@ func (t *TiDBState) SetTableAlias(table string, alias string) {
 func (t *TiDBState) GetInUsedTable() []*model.Table {
 	return t.InUsedTable
 }
+
+func (t *TiDBState) TableMeta(name string) (*model.Table, bool) {
+	tbl, ok := t.tableMeta[name]
+	return tbl, ok
+}
