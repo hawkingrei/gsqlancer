@@ -68,6 +68,7 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int,
 	for i := 0; i < columnsNum; i++ {
 		col := model.RandGenColumn(fmt.Sprintf("c%d", e.globalState.GenColumn(tid)))
 		node.Cols = append(node.Cols, col.GetAst())
+		tableBuilder.AddColumn(model.NewColumn(col.GetAst()))
 	}
 
 	// Auto_random should only have one primary key

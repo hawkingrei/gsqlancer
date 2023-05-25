@@ -31,7 +31,8 @@ func DataType2Len(t string) int {
 }
 
 var (
-	autoOptTypes = []ast.ColumnOptionType{ast.ColumnOptionAutoIncrement, ast.ColumnOptionAutoRandom}
+	autoOptTypes = []ast.ColumnOptionType{ast.ColumnOptionAutoIncrement}
+	// ast.ColumnOptionAutoRandom
 )
 
 func randColumnOptionAuto() *ast.ColumnOption {
@@ -47,7 +48,8 @@ func randColumnOptionAuto() *ast.ColumnOption {
 // BufferOut parser ast node to SQL string
 func BufferOut(node ast.Node) (string, error) {
 	out := new(bytes.Buffer)
-	err := node.Restore(format.NewRestoreCtx(format.RestoreStringDoubleQuotes, out))
+	restore := format.NewRestoreCtx(format.DefaultRestoreFlags, out)
+	err := node.Restore(restore)
 	if err != nil {
 		return "", err
 	}

@@ -25,21 +25,27 @@ var (
 // GenerateEnumDataItem gets enum data interface with given type
 func GenerateEnumDataItem(column gmodel.Column) interface{} {
 	var res interface{}
-	if !column.HasOption(ast.ColumnOptionNotNull) && util.RdRange(0, 3) == 0 {
+	if !column.HasOption(ast.ColumnOptionNotNull) && util.RdRange(0, 10) == 0 {
 		return nil
 	}
-	switch column.Type().String() {
-	case "varchar":
+	switch column.Type().GetType() {
+	case mysql.TypeVarchar:
 		res = stringEnums[rand.Intn(len(stringEnums))]
-	case "text":
+	case mysql.TypeString:
 		res = stringEnums[rand.Intn(len(stringEnums))]
-	case "int":
-		res = intEnums[rand.Intn(len(intEnums))]
-	case "datetime":
+	case mysql.TypeTiny:
+		return util.RdRange(-128, 127)
+	case mysql.TypeShort:
+		return util.RdRange(-32768, 32767)
+	case mysql.TypeInt24:
+		return util.RdRange(-8388608, 8388607)
+	case mysql.TypeLong, mysql.TypeLonglong:
+		return util.RdRange(-2147483648, 2147483647)
+	case mysql.TypeDatetime:
 		res = types.NewTime(timeEnums[rand.Intn(len(timeEnums))], mysql.TypeDatetime, 0)
-	case "timestamp":
+	case mysql.TypeTimestamp:
 		res = types.NewTime(timeEnums[rand.Intn(len(timeEnums))], mysql.TypeDatetime, 0)
-	case "float":
+	case mysql.TypeDouble, mysql.TypeFloat:
 		res = floatEnums[rand.Intn(len(floatEnums))]
 	}
 	return res
