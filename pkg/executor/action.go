@@ -42,6 +42,7 @@ func (e *Executor) Do() {
 		if err != nil {
 			panic(err)
 		}
+		e.state.AddTableMeta(table.Name(), table)
 		if e.cfg.EnableTiflashReplicas() {
 			e.gen.TiflashReplicaStmt(table.Name(), defaultTiflashReplicasCnt)
 		}

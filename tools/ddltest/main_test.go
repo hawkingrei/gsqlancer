@@ -35,9 +35,10 @@ func TestGenerateInsert(t *testing.T) {
 	state := gen.NewTiDBState()
 	insertGen := gen.NewTiDBInsertGenerator(cfg, state)
 	TableGen := gen.NewTiDBTableGenerator(cfg, state)
-	sql, _, err := TableGen.GenerateDDLCreateTable()
+	sql, meta, err := TableGen.GenerateDDLCreateTable()
 	require.NoError(t, err)
 	log.Info(sql.SQLStmt)
+	state.AddTableMeta(meta.Name(), meta)
 	for i := 0; i < 200; i++ {
 		sql, err := insertGen.GenerateDMLInsertByTable("t1")
 		require.NoError(t, err)

@@ -35,7 +35,8 @@ type TiDBState struct {
 
 func NewTiDBState() *TiDBState {
 	return &TiDBState{
-		tableID: make(map[string]uint32),
+		tableID:   make(map[string]uint32),
+		tableMeta: make(map[string]*model.Table),
 	}
 }
 
@@ -109,4 +110,8 @@ func (t *TiDBState) GetInUsedTable() []*model.Table {
 func (t *TiDBState) TableMeta(name string) (*model.Table, bool) {
 	tbl, ok := t.tableMeta[name]
 	return tbl, ok
+}
+
+func (t *TiDBState) AddTableMeta(name string, tbl *model.Table) {
+	t.tableMeta[name] = tbl
 }
