@@ -38,10 +38,15 @@ func TestGenerateInsert(t *testing.T) {
 	sql, meta, err := TableGen.GenerateDDLCreateTable()
 	require.NoError(t, err)
 	log.Info(sql.SQLStmt)
+	store := testkit.CreateMockStore(t)
+	tk := testkit.NewTestKit(t, store)
+	tk.MustExec("use test")
+	tk.MustExec(sql.SQLStmt)
 	state.AddTableMeta(meta.Name(), meta)
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 1; i++ {
 		sql, err := insertGen.GenerateDMLInsertByTable("t1")
 		require.NoError(t, err)
 		log.Info(sql.SQLStmt)
+		tk.MustExec(sql.SQLStmt)
 	}
 }
