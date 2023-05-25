@@ -33,6 +33,25 @@ func (c *Column) String() string {
 	return fmt.Sprintf("%s.%s", c.Table, c.Name)
 }
 
+// Clone makes a replica of column
+func (c *Column) Clone() Column {
+	return Column{
+		ColumnDef:  &*(c.ColumnDef),
+		Table:      c.Table,
+		AliasTable: c.AliasTable,
+		AliasName:  c.AliasName,
+	}
+}
+
+func (c *Column) HasOption(opt ast.ColumnOptionType) bool {
+	for _, option := range c.ColumnDef.Options {
+		if option.Tp == opt {
+			return true
+		}
+	}
+	return false
+}
+
 type Table struct {
 	Refer     *ast.ReferenceDef // Used for foreign key.
 	Option    *ast.IndexOption  // Index Options

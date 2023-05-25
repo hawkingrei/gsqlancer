@@ -2,7 +2,9 @@ package gen
 
 import (
 	"github.com/hawkingrei/gsqlancer/pkg/config"
+	gmodel "github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
+	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/model"
@@ -40,24 +42,29 @@ func (i *TiDBInsertGenerator) walkInsertStmtForTable(node *ast.InsertStmt, table
 		return "", errors.Errorf("table %s not exist", tableName)
 	}
 	node.Table.TableRefs.Left.(*ast.TableName).Name = model.NewCIStr(table.Name())
-	columns := e.walkColumns(&node.Columns, table)
-	e.walkLists(&node.Lists, columns)
+	columns := i.walkColumns(&node.Columns, table)
+	i.walkLists(&node.Lists, columns)
 	return BufferOut(node)
 }
 
-func (i *TiDBInsertGenerator) walkColumns(columns *[]*ast.ColumnName, table *types.Table) []types.Column {
-	cols := make([]types.Column, 0, len(table.Columns))
-	for _, column := range table.Columns {
-		if column.Name.HasPrefix("id_") || column.Name.EqString("id") {
-			continue
-		}
+func (i *TiDBInsertGenerator) walkColumns(columns *[]*ast.ColumnName, table *gmodel.Table) []gmodel.Column {
+	cols := make([]gmodel.Column, 0, len(table.Columns()))
+	for _, column := range table.Columns() {
 		*columns = append(*columns, &ast.ColumnName{
-			Table: table.Name.ToModel(),
-			Name:  column.Name.ToModel(),
+			Table: model.NewCIStr(table.Name()),
+			Name:  model.NewCIStr(column.Name()),
 		})
 		cols = append(cols, column.Clone())
 	}
 	return cols
+}
+
+func (i *TiDBInsertGenerator) walkLists(lists *[][]ast.ExprNode, columns []gmodel.Column) {
+	count := int(util.RdRange(10, 20))
+	for i := 0; i < count; i++ {
+		*lists = append(*lists, randList(columns))
+	}
+	// *lists = append(*lists, randor0(columns)...)
 }
 
 func insertStmt() *ast.InsertStmt {
@@ -71,4 +78,13 @@ func insertStmt() *ast.InsertStmt {
 		Columns: []*ast.ColumnName{},
 	}
 	return &insertStmtNode
+}
+
+func randList(columns []gmodel.Column) []ast.ExprNode {
+	var list []ast.ExprNode
+	for _, column := range columns {
+		// GenerateEnumDataItem
+		list = append(list, ast.NewValueExpr(GenerateEnumDataItem(column), "", ""))
+	}
+	return list
 }
