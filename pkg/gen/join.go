@@ -16,12 +16,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func (g *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
+func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
 	if node.Right == nil {
 		if node, ok := node.Left.(*ast.TableSource); ok {
 			if tn, ok := node.Source.(*ast.TableName); ok {
-				if table := g.globalState.findTableByName(tn.Name.L); table != nil {
-					g.globalState.AppendResultTable(table)
+				if table := t.globalState.findTableByName(tn.Name.L); table != nil {
+					t.globalState.AppendResultTable(table)
 					return
 				}
 			}
@@ -36,32 +36,32 @@ func (g *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
 		)
 		switch node := node.Left.(type) {
 		case *ast.Join:
-			g.walkTableRefs(node)
-			leftTables = g.globalState.GetResultTable()
+			t.walkTableRefs(node)
+			leftTables = t.globalState.GetResultTable()
 		case *ast.TableSource:
 			if tn, ok := node.Source.(*ast.TableName); ok {
-				if table := g.globalState.findTableByName(tn.Name.L); table != nil {
-					tmpTable := g.globalState.CreateTmpTable()
+				if table := t.globalState.findTableByName(tn.Name.L); table != nil {
+					tmpTable := t.globalState.CreateTmpTable()
 					node.AsName = model.NewCIStr(tmpTable)
 					leftTables = []*gmodel.Table{table.Rename(tmpTable)}
-					g.globalState.SetTableAlias(table.Name(), tmpTable)
+					t.globalState.SetTableAlias(table.Name(), tmpTable)
 					break
 				}
 			}
 		default:
 			panic("unreachable")
 		}
-		if table := g.globalState.findTableByName(right.Source.(*ast.TableName).Name.L); table != nil {
-			tmpTable := g.globalState.CreateTmpTable()
+		if table := t.globalState.findTableByName(right.Source.(*ast.TableName).Name.L); table != nil {
+			tmpTable := t.globalState.CreateTmpTable()
 			right.AsName = model.NewCIStr(tmpTable)
 			rightTable = table.Rename(tmpTable)
-			g.globalState.SetTableAlias(table.Name(), tmpTable)
+			t.globalState.SetTableAlias(table.Name(), tmpTable)
 		} else {
 			panic("unreachable")
 		}
 		allTables := append(leftTables, rightTable)
 		// usedTables := genCtx.UsedTables
-		g.globalState.SetResultTable(allTables)
+		t.globalState.SetResultTable(allTables)
 		// genCtx.UsedTables = allTables
 		// defer func() {
 		// 	genCtx.UsedTables = usedTables
@@ -70,31 +70,30 @@ func (g *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
 		// for _, table := range genCtx.ResultTables {
 		// 	fmt.Println(table.Name, table.AliasName)
 		// }
-		node.On.Expr = g.ConditionClause(1)
+		node.On.Expr = t.ConditionClause()
 		return
 	}
-
 	panic("unreachable")
 }
 
 // ConditionClause is to generate a ConditionClause
-func (g *TiDBSelectStmtGen) ConditionClause(depth int) ast.ExprNode {
+func (t *TiDBSelectStmtGen) ConditionClause() ast.ExprNode {
 	// TODO: support subquery
 	// TODO: more ops
 	exprType := types.TypeNumberLikeArg
 	var err error
 	retry := 2
-	node, val, err := g.generateExpr(exprType, depth)
+	node, val, err := t.generateExpr(exprType, t.c.Depth)
 	for err != nil && retry > 0 {
 		log.L().Error("generate where expr error", zap.Error(err))
-		node, val, err = g.generateExpr(exprType, depth)
+		node, val, err = t.generateExpr(exprType, t.c.Depth)
 		retry--
 	}
 	if err != nil {
 		panic("retry times exceed 3")
 	}
 
-	return g.rectifyCondition(node, val)
+	return t.rectifyCondition(node, val)
 }
 
 func (*TiDBSelectStmtGen) rectifyCondition(node ast.ExprNode, val parser_driver.ValueExpr) ast.ExprNode {

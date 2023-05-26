@@ -4,6 +4,10 @@ import (
 	"math/rand"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
+	"github.com/hawkingrei/gsqlancer/pkg/connection"
+	"github.com/hawkingrei/gsqlancer/pkg/gen/hint"
+	gmodel "github.com/hawkingrei/gsqlancer/pkg/model"
+	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/model"
 )
@@ -22,7 +26,14 @@ func NewTiDBSelectStmtGen(c *config.Config, g *TiDBState) *TiDBSelectStmtGen {
 	}
 }
 
-func (*TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt) {
+func (t *TiDBSelectStmtGen) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem,
+	usedTables []*gmodel.Table) (*ast.SelectStmt, string, []types.Column, map[string]*connection.QueryItem, error) {
+	t.globalState.PivotRows = pivotRows
+	t.globalState.InUsedTable = usedTables
+	return t.Gen()
+}
+
+func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, columnInfos []types.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
 	selectStmtNode = &ast.SelectStmt{
 		SelectStmtOpts: &ast.SelectStmtOpts{
 			SQLCache: true,
@@ -31,7 +42,11 @@ func (*TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt) {
 			Fields: []*ast.SelectField{},
 		},
 	}
-	return selectStmtNode
+	selectStmtNode.From = t.TableRefsClause()
+	t.walkTableRefs(selectStmtNode.From.TableRefs)
+	selectStmtNode.Where = t.ConditionClause()
+	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.InUsedTable)
+	return
 }
 
 // TableRefsClause generates linear joins:
@@ -91,4 +106,25 @@ func (t *TiDBSelectStmtGen) TableRefsClause() *ast.TableRefsClause {
 		}
 	}
 	return clause
+}
+
+func (t *TiDBSelectStmtGen) tableHintsExpr(usedTables []*gmodel.Table) []*ast.TableOptimizerHint {
+	hints := make([]*ast.TableOptimizerHint, 0)
+	if !t.c.Hint {
+		return hints
+	}
+	// avoid duplicated hints
+	enabledHints := make(map[string]bool)
+	length := rand.Intn(4)
+	for i := 0; i < length; i++ {
+		to := hint.GenerateHintExpr(usedTables)
+		if to == nil {
+			continue
+		}
+		if _, ok := enabledHints[to.HintName.String()]; !ok {
+			hints = append(hints, to)
+			enabledHints[to.HintName.String()] = true
+		}
+	}
+	return hints
 }

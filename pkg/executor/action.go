@@ -46,6 +46,5 @@ func (e *Executor) Do() {
 		if e.cfg.EnableTiflashReplicas() {
 			e.gen.TiflashReplicaStmt(table.Name(), defaultTiflashReplicasCnt)
 		}
-
 	}
 }

@@ -87,7 +87,7 @@ var disabledHintKeywords = []*hintClass{
 }
 
 // GenerateHintExpr is to generate HintExpr
-func GenerateHintExpr(usedTables []gmodel.Table) (h *ast.TableOptimizerHint) {
+func GenerateHintExpr(usedTables []*gmodel.Table) (h *ast.TableOptimizerHint) {
 	enabledKeywords := hintKeywords
 	tableHasIndex := make(map[string][]string)
 	for _, t := range usedTables {

@@ -7,10 +7,12 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
 	"github.com/hawkingrei/gsqlancer/pkg/gen"
+	"github.com/hawkingrei/gsqlancer/pkg/knownbugs"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/dumpling/context"
+	"github.com/pingcap/tidb/parser/ast"
 	"go.uber.org/zap"
 )
 
@@ -94,7 +96,28 @@ func (e *Executor) progress() {
 	approach := approaches[rand.Intn(len(approaches))]
 	switch approach {
 	case approachPQS:
+		rawPivotRows, usedTables, err := e.ChoosePivotedRow()
+		if err != nil {
+			logging.StatusLog().Fatal("choose pivot row failed", zap.Error(err))
+		}
+		selectAST, selectSQL, columns, pivotRows, err := e.gen.GenPQSSelectStmt(rawPivotRows, usedTables)
+		if err != nil {
+			logging.StatusLog().Fatal("generate PQS statement error", zap.Error(err))
+		}
+		resultRows, err := e.conn.Select(e.ctx, selectSQL)
+		if err != nil {
+			return
+		}
+		correct := e.verifyPQS(pivotRows, columns, resultRows)
+		if correct {
+			dust := knownbugs.NewDustbin([]ast.Node{selectAST}, pivotRows)
+			if dust.IsKnownBug() {
+				// TODO: add known bug log
+				return
+			}
+		}
 	case approachNoREC, approachTLP:
+
 	}
 }
 
@@ -109,7 +132,8 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 		sql := fmt.Sprintf("SELECT * FROM %s ORDER BY RAND() LIMIT 1;", i.Name())
 		exeRes, err := e.conn.Select(e.ctx, sql)
 		if err != nil {
-			panic(err)
+			logging.SQLLOG().Error(sql, zap.Error(err))
+			return nil, nil, err
 		}
 		if len(exeRes) > 0 {
 			for _, c := range exeRes[0] {
@@ -121,4 +145,33 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 		}
 	}
 	return result, reallyUsed, nil
+}
+
+func (e *Executor) verifyPQS(originRow map[string]*connection.QueryItem, columns []types.Column, resultSets []connection.QueryItems) bool {
+	for _, row := range resultSets {
+		if e.checkRow(originRow, columns, row) {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns []types.Column, resultSet connection.QueryItems) bool {
+	for i, c := range columns {
+		// fmt.Printf("i: %d, column: %+v, left: %+v, right: %+v", i, c, originRow[c], resultSet[i])
+		if !compareQueryItem(originRow[c.GetAliasName().String()], resultSet[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func compareQueryItem(left *connection.QueryItem, right *connection.QueryItem) bool {
+	// if left.ValType.Name() != right.ValType.Name() {
+	// 	return false
+	// }
+	if left.Null != right.Null {
+		return false
+	}
+	return (left.Null && right.Null) || (left.ValString == right.ValString)
 }

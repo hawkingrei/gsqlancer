@@ -23,6 +23,8 @@ type Config struct {
 	EnableLeftRightJoin  bool
 	IsInUpdateDeleteStmt bool
 	IsInExprIndex        bool
+	Depth                int
+	Hint                 bool
 }
 
 func DefaultConfig() *Config {
