@@ -25,7 +25,7 @@ var (
 // GenerateEnumDataItem gets enum data interface with given type
 func GenerateEnumDataItem(column gmodel.Column) interface{} {
 	var res interface{}
-	if !column.HasOption(ast.ColumnOptionNotNull) && util.RdRange(0, 10) == 0 {
+	if !column.HasOption(ast.ColumnOptionNotNull) && util.RdRange(0, 5) == 0 {
 		return nil
 	}
 	switch column.Type().GetType() {
