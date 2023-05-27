@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
-	"github.com/hawkingrei/gsqlancer/pkg/connection"
+	"github.com/hawkingrei/gsqlancer/pkg/connection/realdb"
 	"github.com/hawkingrei/gsqlancer/pkg/executor"
 	"github.com/pingcap/log"
 	tidbutil "github.com/pingcap/tidb/util"
@@ -13,7 +13,7 @@ import (
 
 type SQLancer struct {
 	cfg    *config.Config
-	dbConn *connection.DBConnect
+	dbConn *realdb.DBConnect
 
 	exitCh chan struct{}
 	wg     tidbutil.WaitGroupWrapper
@@ -23,7 +23,7 @@ func NewSQLancer(cfg *config.Config) *SQLancer {
 	return &SQLancer{
 		cfg:    cfg,
 		exitCh: make(chan struct{}),
-		dbConn: connection.NewDBConnect(cfg.DBConfig()),
+		dbConn: realdb.NewDBConnect(cfg.DBConfig()),
 	}
 }
 

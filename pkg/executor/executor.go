@@ -6,6 +6,7 @@ import (
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
+	"github.com/hawkingrei/gsqlancer/pkg/connection/realdb"
 	"github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/hawkingrei/gsqlancer/pkg/knownbugs"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
@@ -30,7 +31,7 @@ type Executor struct {
 	state       *gen.TiDBState
 	exitCh      chan struct{}
 	ctx         *context.Context
-	conn        *connection.DBConn
+	conn        *realdb.DBConn
 	sessionMeta *model.SessionMeta
 	gen         generator
 	status      *ExecutorStat
@@ -42,7 +43,7 @@ type Executor struct {
 	roundInBatch int
 }
 
-func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *connection.DBConn) *Executor {
+func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *realdb.DBConn) *Executor {
 	action := gen.NewTiDBState()
 	return &Executor{
 		ctx:         context.Background(),

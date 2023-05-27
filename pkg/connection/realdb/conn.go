@@ -1,10 +1,11 @@
-package connection
+package realdb
 
 import (
 	"context"
 	"database/sql"
 	"time"
 
+	"github.com/hawkingrei/gsqlancer/pkg/connection"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"go.uber.org/zap"
@@ -53,25 +54,25 @@ func (c *DBConn) QueryContext(ctx context.Context, query string, args ...interfa
 }
 
 // Select run select statement and return query result
-func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) ([]QueryItems, error) {
+func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) ([]connection.QueryItems, error) {
 	start := time.Now()
 	rows, err := c.conn.QueryContext(ctx, stmt, args...)
 	if err != nil {
 		logging.SQLLOG().Error("fail to query sql", zap.String("sql", stmt), zap.Error(err), zap.Duration("time", time.Since(start)))
-		return []QueryItems{}, err
+		return []connection.QueryItems{}, err
 	}
 	if rows.Err() != nil {
 		logging.SQLLOG().Error("fail to query sql", zap.String("sql", stmt), zap.Error(rows.Err()), zap.Duration("time", time.Since(start)))
-		return []QueryItems{}, rows.Err()
+		return []connection.QueryItems{}, rows.Err()
 	}
 
 	columnTypes, _ := rows.ColumnTypes()
-	var result []QueryItems
+	var result []connection.QueryItems
 
 	for rows.Next() {
 		var (
 			rowResultSets []interface{}
-			resultRow     QueryItems
+			resultRow     connection.QueryItems
 		)
 		for range columnTypes {
 			rowResultSets = append(rowResultSets, new(interface{}))
@@ -81,7 +82,7 @@ func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) (
 		}
 		for index, resultItem := range rowResultSets {
 			r := *resultItem.(*interface{})
-			item := QueryItem{
+			item := connection.QueryItem{
 				ValType: columnTypes[index],
 			}
 			if r != nil {

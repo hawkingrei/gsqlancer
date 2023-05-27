@@ -3,13 +3,13 @@ package config
 import (
 	"time"
 
-	"github.com/hawkingrei/gsqlancer/pkg/connection"
+	"github.com/hawkingrei/gsqlancer/pkg/connection/realdb"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 )
 
 type Config struct {
 	log                   logging.LogConfig `toml:"log"`
-	db                    connection.Config `toml:"db"`
+	db                    realdb.Config     `toml:"db"`
 	maxTestTime           time.Duration     `toml:"max_test_time,omitempty"`
 	concurrency           int32             `toml:"concurrency,omitempty"`
 	enablePartition       bool              `toml:"enable_partition,omitempty"`
@@ -32,7 +32,7 @@ func DefaultConfig() *Config {
 		enablePartition: true,
 		concurrency:     8,
 		maxTestTime:     6 * time.Hour,
-		db:              *connection.DefaultConfig(),
+		db:              *realdb.DefaultConfig(),
 	}
 }
 
@@ -48,7 +48,7 @@ func (c *Config) EnableTiflashReplicas() bool {
 	return c.enableTiflashReplicas
 }
 
-func (c *Config) DBConfig() *connection.Config {
+func (c *Config) DBConfig() *realdb.Config {
 	return &c.db
 }
 
