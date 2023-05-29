@@ -116,6 +116,7 @@ func (e *Executor) progress() {
 				// TODO: add known bug log
 				return
 			}
+			return
 		}
 	case approachNoREC, approachTLP:
 
