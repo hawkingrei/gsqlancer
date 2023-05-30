@@ -155,7 +155,7 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 	return result, reallyUsed, nil
 }
 
-func (e *Executor) verifyPQS(originRow map[string]*connection.QueryItem, columns []types.Column, resultSets []connection.QueryItems) bool {
+func (e *Executor) verifyPQS(originRow map[string]*connection.QueryItem, columns []model.Column, resultSets []connection.QueryItems) bool {
 	for _, row := range resultSets {
 		if e.checkRow(originRow, columns, row) {
 			return true
@@ -164,10 +164,10 @@ func (e *Executor) verifyPQS(originRow map[string]*connection.QueryItem, columns
 	return false
 }
 
-func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns []types.Column, resultSet connection.QueryItems) bool {
+func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns []model.Column, resultSet connection.QueryItems) bool {
 	for i, c := range columns {
 		// fmt.Printf("i: %d, column: %+v, left: %+v, right: %+v", i, c, originRow[c], resultSet[i])
-		if !compareQueryItem(originRow[c.GetAliasName().String()], resultSet[i]) {
+		if !compareQueryItem(originRow[c.AliasTable.String()], resultSet[i]) {
 			return false
 		}
 	}

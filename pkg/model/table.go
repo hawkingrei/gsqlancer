@@ -52,6 +52,24 @@ func (c *Column) HasOption(opt ast.ColumnOptionType) bool {
 	return false
 }
 
+// ToModel converts to ast model
+func (c *Column) ToColumnNameExpr() *ast.ColumnNameExpr {
+	table := c.Table
+	if c.AliasTable.String() != "" {
+		table = c.AliasTable
+	}
+	name := c.Name()
+	if c.AliasTable.String() != "" {
+		name = c.AliasName.String()
+	}
+	return &ast.ColumnNameExpr{
+		Name: &ast.ColumnName{
+			Table: table,
+			Name:  model.NewCIStr(name),
+		},
+	}
+}
+
 type Table struct {
 	Refer     *ast.ReferenceDef // Used for foreign key.
 	Option    *ast.IndexOption  // Index Options

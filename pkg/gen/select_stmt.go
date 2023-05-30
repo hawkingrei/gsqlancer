@@ -8,8 +8,13 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/gen/hint"
 	gmodel "github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/model"
+	"github.com/pingcap/tidb/parser/mysql"
+	tidb_types "github.com/pingcap/tidb/types"
+	parser_driver "github.com/pingcap/tidb/types/parser_driver"
+	"go.uber.org/zap"
 )
 
 type TiDBSelectStmtGen struct {
@@ -27,13 +32,13 @@ func NewTiDBSelectStmtGen(c *config.Config, g *TiDBState) *TiDBSelectStmtGen {
 }
 
 func (t *TiDBSelectStmtGen) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem,
-	usedTables []*gmodel.Table) (*ast.SelectStmt, string, []types.Column, map[string]*connection.QueryItem, error) {
+	usedTables []*gmodel.Table) (*ast.SelectStmt, string, []gmodel.Column, map[string]*connection.QueryItem, error) {
 	t.globalState.PivotRows = pivotRows
 	t.globalState.InUsedTable = usedTables
 	return t.Gen()
 }
 
-func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, columnInfos []types.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
+func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, columnInfos []gmodel.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
 	selectStmtNode = &ast.SelectStmt{
 		SelectStmtOpts: &ast.SelectStmtOpts{
 			SQLCache: true,
@@ -46,7 +51,9 @@ func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, c
 	t.walkTableRefs(selectStmtNode.From.TableRefs)
 	selectStmtNode.Where = t.ConditionClause()
 	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.InUsedTable)
-	return
+	columnInfos, updatedPivotRows = t.walkResultFields(selectStmtNode)
+	sql, err = BufferOut(selectStmtNode)
+	return selectStmtNode, sql, columnInfos, updatedPivotRows, err
 }
 
 // TableRefsClause generates linear joins:
@@ -127,4 +134,68 @@ func (t *TiDBSelectStmtGen) tableHintsExpr(usedTables []*gmodel.Table) []*ast.Ta
 		}
 	}
 	return hints
+}
+
+func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Column, map[string]*connection.QueryItem) {
+	if t.c.EnableNoRECApproach {
+		exprNode := &parser_driver.ValueExpr{}
+		tp := tidb_types.NewFieldType(mysql.TypeLonglong)
+		tp.SetFlag(128)
+		exprNode.TexprNode.SetType(tp)
+		exprNode.Datum.SetInt64(1)
+		countField := ast.SelectField{
+			Expr: &ast.AggregateFuncExpr{
+				F: "count",
+				Args: []ast.ExprNode{
+					exprNode,
+				},
+			},
+		}
+		node.Fields.Fields = append(node.Fields.Fields, &countField)
+		return nil, nil
+	}
+	// only used for tlp mode now, may effective on more cases in future
+	if !t.c.EnablePQSApproach {
+		// rand if there is aggregation func in result field
+		if rand.Intn(6) > 3 {
+			selfComposableAggs := []string{"sum", "min", "max"}
+			for i := 0; i < rand.Intn(3)+1; i++ {
+				child, _, err := t.generateExpr(types.TypeNumberLikeArg, 2)
+				if err != nil {
+					logging.StatusLog().Error("generate child expr of aggeration in result field error", zap.Error(err))
+				} else {
+					aggField := ast.SelectField{
+						Expr: &ast.AggregateFuncExpr{
+							F: selfComposableAggs[rand.Intn(len(selfComposableAggs))],
+							Args: []ast.ExprNode{
+								child,
+							},
+						},
+					}
+					node.Fields.Fields = append(node.Fields.Fields, &aggField)
+				}
+			}
+
+			if len(node.Fields.Fields) != 0 {
+				return nil, nil
+			}
+		}
+	}
+	columns := make([]gmodel.Column, 0)
+	row := make(map[string]*connection.QueryItem)
+	for _, table := range t.globalState.GetResultTable() {
+		for _, column := range table.Columns() {
+			asname := t.globalState.CreateTmpColumn()
+			selectField := ast.SelectField{
+				Expr:   column.ToColumnNameExpr(),
+				AsName: model.NewCIStr(asname),
+			}
+			node.Fields.Fields = append(node.Fields.Fields, &selectField)
+			col := column.Clone()
+			col.AliasName = model.NewCIStr(asname)
+			columns = append(columns, col)
+			row[asname] = t.globalState.PivotRows[column.String()]
+		}
+	}
+	return columns, row
 }

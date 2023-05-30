@@ -1,6 +1,8 @@
 package executor
 
 import (
+	"fmt"
+
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"go.uber.org/zap"
 )
@@ -33,6 +35,7 @@ func (e *Executor) Do() {
 	switch e.action {
 	case ActionAnalyzeStmt:
 		e.gen.AnalyzeTable()
+		fmt.Println("ActionAnalyzeStmt")
 	case ActionCreateTableStmt:
 		sql, table, err := e.gen.CreateTable()
 		if err != nil {
@@ -45,6 +48,14 @@ func (e *Executor) Do() {
 		e.state.AddTableMeta(table.Name(), table)
 		if e.cfg.EnableTiflashReplicas() {
 			e.gen.TiflashReplicaStmt(table.Name(), defaultTiflashReplicasCnt)
+		}
+		sql, err = e.gen.InsertTable(table.Name())
+		if err != nil {
+			logging.StatusLog().Error("fail to gen insert table", zap.Error(err))
+		}
+		err = e.conn.MustExec(e.ctx, sql)
+		if err != nil {
+			panic(err)
 		}
 	}
 }

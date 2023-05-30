@@ -56,8 +56,8 @@ func NewStdLogger(cfg *LogConfig) (*StdLogger, error) {
 	bws := zapcore.BufferedWriteSyncer{
 		WS: output,
 	}
-	statusCore := zapcore.NewCore(encoder, &bws, zap.InfoLevel)
-	sqlLog := zap.New(statusCore)
+	sqlCore := zapcore.NewCore(encoder, &bws, zap.InfoLevel)
+	sqlLog := zap.New(sqlCore)
 	return &StdLogger{
 		cfg,
 		statusLog,

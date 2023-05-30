@@ -3,7 +3,6 @@ package gen
 import (
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	gmodel "github.com/hawkingrei/gsqlancer/pkg/model"
-	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/parser/ast"
@@ -22,15 +21,15 @@ func NewTiDBInsertGenerator(c *config.Config, globalState *TiDBState) *TiDBInser
 	}
 }
 
-func (i *TiDBInsertGenerator) GenerateDMLInsertByTable(table string) (*types.SQL, error) {
+func (i *TiDBInsertGenerator) GenerateDMLInsertByTable(table string) (*gmodel.SQL, error) {
 	tree := insertStmt()
 	stmt, err := i.walkInsertStmtForTable(tree, table)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 
-	return &types.SQL{
-		SQLType:  types.SQLTypeDMLInsert,
+	return &gmodel.SQL{
+		SQLType:  gmodel.SQLTypeDMLInsert,
 		SQLStmt:  stmt,
 		SQLTable: table,
 	}, nil

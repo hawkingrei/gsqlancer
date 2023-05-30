@@ -32,7 +32,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		log: &logging.LogConfig{
 			StatusLogPath: "./status.log",
-			SQLLogPath:    "./sql.log",
+			SQLLogPath:    "/Users/weizhenwang/devel/opensource/gsqlancer/sql.log",
 		},
 		enablePartition:   true,
 		concurrency:       8,

@@ -25,6 +25,7 @@ type TiDBState struct {
 	tableMeta       map[string]*model.Table
 	databaseID      uint64
 	tableIDGen      atomic.Uint32
+	tmpColIndex     atomic.Uint32
 	resultTable     []*model.Table
 	InUsedTable     []*model.Table
 	tmpTableIDGen   atomic.Uint32
@@ -115,4 +116,9 @@ func (t *TiDBState) TableMeta(name string) (*model.Table, bool) {
 
 func (t *TiDBState) AddTableMeta(name string, tbl *model.Table) {
 	t.tableMeta[name] = tbl
+}
+
+func (t *TiDBState) CreateTmpColumn() string {
+	index := t.tmpColIndex.Add(1)
+	return fmt.Sprintf("col_%d", index)
 }
