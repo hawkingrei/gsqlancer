@@ -6,6 +6,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/connection/realdb"
 	"github.com/hawkingrei/gsqlancer/pkg/executor"
+	"github.com/hawkingrei/gsqlancer/pkg/report"
 	"github.com/pingcap/log"
 	tidbutil "github.com/pingcap/tidb/util"
 	"go.uber.org/zap"
@@ -17,12 +18,14 @@ type SQLancer struct {
 
 	exitCh chan struct{}
 	wg     tidbutil.WaitGroupWrapper
+	report *report.Reporter
 }
 
 func NewSQLancer(cfg *config.Config) *SQLancer {
 	return &SQLancer{
 		cfg:    cfg,
 		exitCh: make(chan struct{}),
+		report: report.NewReporter("", ""),
 		dbConn: realdb.NewDBConnect(cfg.DBConfig()),
 	}
 }

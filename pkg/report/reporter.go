@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -39,7 +40,13 @@ func NewReporter(url, outPath string) *Reporter {
 
 func (r *Reporter) Report(result *ReportResult) {
 	if err := r.HttpReport(result); err != nil {
-		logging.StatusLog().Error("fail to report", zap.Error(err))
+		logging.StatusLog().Error("fail to http report", zap.Error(err))
+	}
+	if err := r.StdoutReport(result); err != nil {
+		logging.StatusLog().Error("fail to stdout report", zap.Error(err))
+	}
+	if err := r.FileReport(result); err != nil {
+		logging.StatusLog().Error("fail to file report", zap.Error(err))
 	}
 }
 
@@ -58,7 +65,9 @@ func (r *Reporter) HttpReport(result *ReportResult) error {
 	return nil
 }
 
-func (r *Reporter) FileReport(result *Reporter) error {
+const defaultIndentation = "    "
+
+func (r *Reporter) FileReport(result *ReportResult) error {
 	var output string
 	var err error
 	if r.outPath == "" {
@@ -76,10 +85,50 @@ func (r *Reporter) FileReport(result *Reporter) error {
 	}
 	defer file.Close()
 	writer := bufio.NewWriter(file)
-	writer.WriteString(title("Database Information"))
-	writer.WriteString(title("Test Information"))
-	writer.WriteString(title("Environment Information"))
+	r.WriteBuffer(result, writer)
 	return file.Sync()
+}
+
+func (r *Reporter) StdoutReport(result *ReportResult) error {
+	var buffer bytes.Buffer
+	r.WriteBuffer(result, &buffer)
+	_, err := fmt.Fprintln(os.Stdout, buffer)
+	return err
+}
+
+type write interface {
+	WriteString(s string) (int, error)
+}
+
+func (r *Reporter) WriteBuffer(result *ReportResult, buffer write) {
+	// Database Information
+	buffer.WriteString(title("Database Information"))
+	buffer.WriteString("database version: " + result.DatabaseVersion + "\n")
+
+	// Test Information
+	buffer.WriteString(title("Test Information"))
+	buffer.WriteString("test time: " + result.Timestamp.String() + "\n")
+	buffer.WriteString("test method: " + result.Method + "\n")
+	buffer.WriteString("test prepare: " + "\n")
+	for _, p := range result.Process {
+		buffer.WriteString(defaultIndentation)
+		buffer.WriteString(p)
+		buffer.WriteString("\n")
+	}
+	if result.Stack != "" {
+		buffer.WriteString("stack: \n")
+		buffer.WriteString(result.Stack)
+		buffer.WriteString("\n")
+	}
+	buffer.WriteString("error sql: \n")
+	buffer.WriteString(result.ErrorSql)
+	buffer.WriteString("\n")
+
+	// Environment Information
+	buffer.WriteString(title("Environment Information"))
+	for k, v := range result.EnvironmentVariables {
+		buffer.WriteString(k + ": " + v + "\n")
+	}
 }
 
 func title(t string) string {
