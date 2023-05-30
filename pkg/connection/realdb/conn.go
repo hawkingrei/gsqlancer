@@ -19,14 +19,14 @@ func (c *DBConn) Close() error {
 	return c.conn.Close()
 }
 
-func (c *DBConn) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	result, err := c.conn.ExecContext(ctx, query, args...)
+func (c *DBConn) ExecContext(ctx context.Context, query string, args ...interface{}) error {
+	_, err := c.conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		logging.SQLLOG().Error("fail to execute sql", zap.String("sql", query), zap.Error(err))
-		return nil, err
+		return err
 	}
 	logging.SQLLOG().Info("success to execute sql", zap.String("sql", query))
-	return result, err
+	return err
 }
 
 func (c *DBConn) MustExec(ctx context.Context, query *model.SQL) error {

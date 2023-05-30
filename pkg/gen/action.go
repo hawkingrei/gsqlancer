@@ -35,8 +35,9 @@ type TiDBState struct {
 
 func NewTiDBState() *TiDBState {
 	return &TiDBState{
-		tableID:   make(map[string]uint32),
-		tableMeta: make(map[string]*model.Table),
+		tableID:    make(map[string]uint32),
+		tableMeta:  make(map[string]*model.Table),
+		TableAlias: make(map[string]string),
 	}
 }
 

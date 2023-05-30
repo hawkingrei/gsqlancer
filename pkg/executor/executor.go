@@ -76,10 +76,12 @@ func (e *Executor) Run() {
 		}
 		e.Next()
 		e.Do()
+		e.progress()
 	}
 }
 
-func (e *Executor) progress() {
+// return whether it continues or not.
+func (e *Executor) progress() bool {
 	var approaches []testingApproach
 	// Because we creates view just in time with process(we creates views on first ViewCount rounds)
 	// and current implementation depends on the PQS to ensures that there exists at lease one row in that view
@@ -110,21 +112,21 @@ func (e *Executor) progress() {
 		}
 		resultRows, err := e.conn.Select(e.ctx, selectSQL)
 		if err != nil {
-			return
+			return true
 		}
 		correct := e.verifyPQS(pivotRows, columns, resultRows)
 		if correct {
 			dust := knownbugs.NewDustbin([]ast.Node{selectAST}, pivotRows)
 			if dust.IsKnownBug() {
 				// TODO: add known bug log
-				return
+				return true
 			}
-
-			return
+			return false
 		}
 	case approachNoREC, approachTLP:
 
 	}
+	return true
 }
 
 // ChoosePivotedRow choose a row

@@ -24,6 +24,13 @@ type Reporter struct {
 }
 
 func NewReporter(url, outPath string) *Reporter {
+	var err error
+	if outPath == "" {
+		outPath, err = os.Getwd()
+		if err != nil {
+			logging.StatusLog().Fatal("fail to get pwd for outpath", zap.Error(err))
+		}
+	}
 	fileInfo, err := os.Stat(outPath)
 	if err != nil {
 		logging.StatusLog().Fatal("fail to check outpath", zap.Error(err))
@@ -70,15 +77,8 @@ const defaultIndentation = "    "
 func (r *Reporter) FileReport(result *ReportResult) error {
 	var output string
 	var err error
-	if r.outPath == "" {
-		output, err = os.Getwd()
-		if err != nil {
-			return err
-		}
-	} else {
-		id := r.id.Add(1)
-		output = filepath.Join(r.outPath, string(id)+".txt")
-	}
+	id := r.id.Add(1)
+	output = filepath.Join(r.outPath, string(id)+".txt")
 	file, err := os.Create(output)
 	if err != nil {
 		panic(err)

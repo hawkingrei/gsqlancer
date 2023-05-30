@@ -30,10 +30,11 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		enablePartition: true,
-		concurrency:     8,
-		maxTestTime:     6 * time.Hour,
-		db:              *realdb.DefaultConfig(),
+		enablePartition:   true,
+		concurrency:       8,
+		maxTestTime:       6 * time.Hour,
+		db:                *realdb.DefaultConfig(),
+		EnablePQSApproach: true,
 	}
 }
 
