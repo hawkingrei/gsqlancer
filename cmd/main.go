@@ -12,6 +12,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/util/signal"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 func flagSet() *flag.FlagSet {
@@ -46,6 +47,7 @@ func main() {
 	}
 	logging.SetGlobalLogger(logger)
 	gen.GlobalStatue.SetErrorIgnore(errors.NewTiDBErrorIgnore())
+	logging.StatusLog().Info("start gsqlancer", zap.Any("config", cfg))
 	svr := sqlancer.NewSQLancer(cfg)
 	svr.Run()
 	exited := make(chan struct{})

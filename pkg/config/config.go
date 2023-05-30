@@ -8,13 +8,13 @@ import (
 )
 
 type Config struct {
-	log                   logging.LogConfig `toml:"log"`
-	db                    realdb.Config     `toml:"db"`
-	maxTestTime           time.Duration     `toml:"max_test_time"`
-	concurrency           int32             `toml:"concurrency"`
-	enablePartition       bool              `toml:"enable_partition"`
-	enableTiflashReplicas bool              `toml:"enable_tiflash_replicas"`
-	selectDepth           int               `toml:"select_depth"`
+	log                   *logging.LogConfig `toml:"log"`
+	db                    realdb.Config      `toml:"db"`
+	maxTestTime           time.Duration      `toml:"max_test_time"`
+	concurrency           int32              `toml:"concurrency"`
+	enablePartition       bool               `toml:"enable_partition"`
+	enableTiflashReplicas bool               `toml:"enable_tiflash_replicas"`
+	selectDepth           int                `toml:"select_depth"`
 
 	ReportPath           string `toml:"report_path"`
 	EnablePQSApproach    bool   `toml:"enable_pqs_approach"`
@@ -30,6 +30,10 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
+		log: &logging.LogConfig{
+			StatusLogPath: "./status.log",
+			SQLLogPath:    "./sql.log",
+		},
 		enablePartition:   true,
 		concurrency:       8,
 		maxTestTime:       6 * time.Hour,
@@ -59,5 +63,5 @@ func (c *Config) MaxTestTime() time.Duration {
 }
 
 func (c *Config) Log() *logging.LogConfig {
-	return &c.log
+	return c.log
 }

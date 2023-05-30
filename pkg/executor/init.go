@@ -3,7 +3,7 @@ package executor
 import (
 	"fmt"
 
-	"github.com/pingcap/log"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"go.uber.org/zap"
 )
 
@@ -21,7 +21,7 @@ func (e *Executor) initDatabase() error {
 	if err != nil {
 		return err
 	}
-	log.Info("success to create database", zap.String("sql", sql))
+	logging.SQLLOG().Info("success to create database", zap.String("sql", sql))
 	err = e.conn.ExecContext(e.ctx, "use "+e.useDatabase)
 	return err
 }
