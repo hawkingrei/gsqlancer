@@ -25,7 +25,7 @@ func NewSQLancer(cfg *config.Config) *SQLancer {
 	return &SQLancer{
 		cfg:    cfg,
 		exitCh: make(chan struct{}),
-		report: report.NewReporter("", ""),
+		report: report.NewReporter("", cfg.ReportPath),
 		dbConn: realdb.NewDBConnect(cfg.DBConfig()),
 	}
 }
@@ -36,7 +36,7 @@ func (s *SQLancer) Run() {
 		if err != nil {
 			log.Fatal("failed to get connection", zap.Error(err))
 		}
-		exec := executor.NewExecutor(i, s.cfg, s.exitCh, conn)
+		exec := executor.NewExecutor(i, s.cfg, s.exitCh, conn, s.report)
 		s.wg.Run(exec.Run)
 	}
 	s.wg.Run(s.tick)

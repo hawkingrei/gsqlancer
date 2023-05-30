@@ -10,6 +10,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/gen"
 	"github.com/hawkingrei/gsqlancer/pkg/knownbugs"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
+	"github.com/hawkingrei/gsqlancer/pkg/report"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/dumpling/context"
@@ -38,12 +39,13 @@ type Executor struct {
 	id          int
 	action      ActionType
 	useDatabase string
+	report      *report.Reporter
 	// copy from
 	batch        int
 	roundInBatch int
 }
 
-func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *realdb.DBConn) *Executor {
+func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *realdb.DBConn, report *report.Reporter) *Executor {
 	action := gen.NewTiDBState()
 	return &Executor{
 		ctx:         context.Background(),
@@ -55,6 +57,7 @@ func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *realdb.
 		sessionMeta: model.NewSessionMeta(),
 		status:      NewExecutorStat(),
 		gen:         newGenerator(cfg, action),
+		report:      report,
 	}
 }
 
@@ -116,6 +119,7 @@ func (e *Executor) progress() {
 				// TODO: add known bug log
 				return
 			}
+
 			return
 		}
 	case approachNoREC, approachTLP:
