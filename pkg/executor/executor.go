@@ -167,7 +167,7 @@ func (e *Executor) verifyPQS(originRow map[string]*connection.QueryItem, columns
 func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns []model.Column, resultSet connection.QueryItems) bool {
 	for i, c := range columns {
 		// fmt.Printf("i: %d, column: %+v, left: %+v, right: %+v", i, c, originRow[c], resultSet[i])
-		if !compareQueryItem(originRow[c.AliasTable.String()], resultSet[i]) {
+		if !compareQueryItem(originRow[c.AliasName.String()], resultSet[i]) {
 			return false
 		}
 	}
@@ -175,6 +175,11 @@ func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns 
 }
 
 func compareQueryItem(left *connection.QueryItem, right *connection.QueryItem) bool {
+	if left != nil && right != right {
+		return true
+	} else {
+		return false
+	}
 	// if left.ValType.Name() != right.ValType.Name() {
 	// 	return false
 	// }
