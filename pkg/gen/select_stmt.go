@@ -34,7 +34,7 @@ func NewTiDBSelectStmtGen(c *config.Config, g *TiDBState) *TiDBSelectStmtGen {
 func (t *TiDBSelectStmtGen) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem,
 	usedTables []*gmodel.Table) (*ast.SelectStmt, string, []gmodel.Column, map[string]*connection.QueryItem, error) {
 	t.globalState.PivotRows = pivotRows
-	t.globalState.InUsedTable = usedTables
+	t.globalState.SetInUsedTable(usedTables)
 	return t.Gen()
 }
 
@@ -50,7 +50,7 @@ func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, c
 	selectStmtNode.From = t.TableRefsClause()
 	t.walkTableRefs(selectStmtNode.From.TableRefs)
 	selectStmtNode.Where = t.ConditionClause()
-	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.InUsedTable)
+	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
 	columnInfos, updatedPivotRows = t.walkResultFields(selectStmtNode)
 	sql, err = BufferOut(selectStmtNode)
 	return selectStmtNode, sql, columnInfos, updatedPivotRows, err
@@ -184,10 +184,11 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 	columns := make([]gmodel.Column, 0)
 	row := make(map[string]*connection.QueryItem)
 	for _, table := range t.globalState.GetResultTable() {
+		//logging.StatusLog().Debug("table", zap.String("table", table.Name()), zap.Any("columns", table.Columns()))
 		for _, column := range table.Columns() {
 			asname := t.globalState.CreateTmpColumn()
 			selectField := ast.SelectField{
-				Expr:   column.ToColumnNameExpr(),
+				Expr:   column.ToColumnNameExpr(table.Name()),
 				AsName: model.NewCIStr(asname),
 			}
 			node.Fields.Fields = append(node.Fields.Fields, &selectField)
@@ -197,5 +198,6 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 			row[asname] = t.globalState.PivotRows[column.String()]
 		}
 	}
+	logging.StatusLog().Debug("walkResultFields", zap.Any("columns", columns))
 	return columns, row
 }

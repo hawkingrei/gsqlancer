@@ -53,7 +53,7 @@ func (c *Column) HasOption(opt ast.ColumnOptionType) bool {
 }
 
 // ToModel converts to ast model
-func (c *Column) ToColumnNameExpr() *ast.ColumnNameExpr {
+func (c *Column) ToColumnNameExpr(tableName string) *ast.ColumnNameExpr {
 	table := c.Table
 	if c.AliasTable.String() != "" {
 		table = c.AliasTable
@@ -61,6 +61,9 @@ func (c *Column) ToColumnNameExpr() *ast.ColumnNameExpr {
 	name := c.Name()
 	if c.AliasTable.String() != "" {
 		name = c.AliasName.String()
+	}
+	if table.String() == "" {
+		table = model.NewCIStr(tableName)
 	}
 	return &ast.ColumnNameExpr{
 		Name: &ast.ColumnName{

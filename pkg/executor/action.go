@@ -1,8 +1,6 @@
 package executor
 
 import (
-	"fmt"
-
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"go.uber.org/zap"
 )
@@ -35,7 +33,6 @@ func (e *Executor) Do() {
 	switch e.action {
 	case ActionAnalyzeStmt:
 		e.gen.AnalyzeTable()
-		fmt.Println("ActionAnalyzeStmt")
 	case ActionCreateTableStmt:
 		sql, table, err := e.gen.CreateTable()
 		if err != nil {

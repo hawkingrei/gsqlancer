@@ -22,7 +22,7 @@ func NewStdLogger(cfg *LogConfig) (*StdLogger, error) {
 	}
 	// info level enabler
 	infoLevel := zap.LevelEnablerFunc(func(level zapcore.Level) bool {
-		return level == zapcore.InfoLevel
+		return level == zapcore.DebugLevel
 	})
 
 	// error and fatal level enabler

@@ -26,8 +26,8 @@ type TiDBState struct {
 	databaseID      uint64
 	tableIDGen      atomic.Uint32
 	tmpColIndex     atomic.Uint32
-	resultTable     []*model.Table
-	InUsedTable     []*model.Table
+	resultTable     map[string]*model.Table
+	InUsedTable     map[string]*model.Table
 	tmpTableIDGen   atomic.Uint32
 	TableAlias      map[string]string
 	PivotRows       map[string]*connection.QueryItem
@@ -36,9 +36,11 @@ type TiDBState struct {
 
 func NewTiDBState() *TiDBState {
 	return &TiDBState{
-		tableID:    make(map[string]uint32),
-		tableMeta:  make(map[string]*model.Table),
-		TableAlias: make(map[string]string),
+		tableID:     make(map[string]uint32),
+		tableMeta:   make(map[string]*model.Table),
+		TableAlias:  make(map[string]string),
+		resultTable: make(map[string]*model.Table),
+		InUsedTable: make(map[string]*model.Table),
 	}
 }
 
@@ -85,15 +87,19 @@ func (t *TiDBState) findTableByName(name string) *model.Table {
 }
 
 func (t *TiDBState) SetResultTable(tables []*model.Table) {
-	t.resultTable = tables
+	//logging.StatusLog().Debug("set table", zap.Any("table", tables))
+	for _, table := range tables {
+		t.resultTable[table.Name()] = table
+	}
 }
 
 func (t *TiDBState) AppendResultTable(table *model.Table) {
-	t.resultTable = append(t.resultTable, table)
+	//logging.StatusLog().Debug("add table", zap.String("table", table.Name()), zap.String("alias", table.AliasName.String()))
+	t.resultTable[table.Name()] = table
 }
 
 func (t *TiDBState) GetResultTable() []*model.Table {
-	return t.resultTable
+	return maps.Values(t.resultTable)
 }
 
 func (t *TiDBState) CreateTmpTable() string {
@@ -106,7 +112,13 @@ func (t *TiDBState) SetTableAlias(table string, alias string) {
 }
 
 func (t *TiDBState) GetInUsedTable() []*model.Table {
-	return t.InUsedTable
+	return maps.Values(t.InUsedTable)
+}
+
+func (t *TiDBState) SetInUsedTable(tables []*model.Table) {
+	for _, table := range tables {
+		t.InUsedTable[table.Name()] = table
+	}
 }
 
 func (t *TiDBState) TableMeta(name string) (*model.Table, bool) {

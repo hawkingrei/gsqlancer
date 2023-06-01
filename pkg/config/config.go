@@ -35,7 +35,7 @@ func DefaultConfig() *Config {
 			SQLLogPath:    "/Users/weizhenwang/devel/opensource/gsqlancer/sql.log",
 		},
 		enablePartition:   true,
-		concurrency:       8,
+		concurrency:       1,
 		maxTestTime:       6 * time.Hour,
 		db:                *realdb.DefaultConfig(),
 		EnablePQSApproach: true,
