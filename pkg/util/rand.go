@@ -124,3 +124,14 @@ func RdTimestamp() time.Time {
 	sec := rand.Int63n(delta) + min
 	return time.Unix(sec, 0)
 }
+
+func Choice[T any](m []T) T {
+	return m[rand.Intn(len(m))]
+}
+
+func ChoiceSubset[T any](m []T, n int) []T {
+	rand.Shuffle(len(m), func(i, j int) {
+		m[i], m[j] = m[j], m[i]
+	})
+	return m[:n]
+}

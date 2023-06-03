@@ -21,17 +21,18 @@ const (
 )
 
 type TiDBState struct {
-	tableID         map[string]uint32 // tableID  -> columnID
-	tableMeta       map[string]*model.Table
-	databaseID      uint64
-	tableIDGen      atomic.Uint32
-	tmpColIndex     atomic.Uint32
-	resultTable     map[string]*model.Table
-	InUsedTable     map[string]*model.Table
-	tmpTableIDGen   atomic.Uint32
-	TableAlias      map[string]string
-	PivotRows       map[string]*connection.QueryItem
-	unwrapPivotRows map[string]interface{}
+	tableID               map[string]uint32 // tableID  -> columnID
+	tableMeta             map[string]*model.Table
+	databaseID            uint64
+	tableIDGen            atomic.Uint32
+	tmpColIndex           atomic.Uint32
+	resultTable           map[string]*model.Table
+	InUsedTable           map[string]*model.Table
+	tmpTableIDGen         atomic.Uint32
+	TableAlias            map[string]string
+	PivotRows             map[string]*connection.QueryItem
+	unwrapPivotRows       map[string]interface{}
+	recentCreateTableName string
 }
 
 func NewTiDBState() *TiDBState {
@@ -42,6 +43,24 @@ func NewTiDBState() *TiDBState {
 		resultTable: make(map[string]*model.Table),
 		InUsedTable: make(map[string]*model.Table),
 	}
+}
+
+func (t *TiDBState) Reset() {
+	maps.Clear(t.resultTable)
+	t.tmpColIndex.Store(0)
+	t.tmpTableIDGen.Store(0)
+}
+
+func (t *TiDBState) SetRecentCreateTableName(name string) {
+	t.recentCreateTableName = name
+}
+
+func (t *TiDBState) ResetRecentCreateTableName() {
+	t.recentCreateTableName = ""
+}
+
+func (t *TiDBState) GetRecentCreateTableName() string {
+	return t.recentCreateTableName
 }
 
 func (t *TiDBState) GenTableID() uint32 {
@@ -78,6 +97,22 @@ func (t *TiDBState) GetRandTableList() []string {
 	return ids
 }
 
+func (t *TiDBState) GetRandTables() []*model.Table {
+	tables := maps.Values(t.tableMeta)
+	if len(tables) == 1 {
+		return tables
+	}
+	rand.Shuffle(len(tables), func(i, j int) {
+		tables[i], tables[j] = tables[j], tables[i]
+	})
+	return tables
+}
+
+func (t *TiDBState) GetRandTable() *model.Table {
+	tables := maps.Values(t.tableMeta)
+	return tables[rand.Intn(len(tables))]
+}
+
 func (t *TiDBState) findTableByName(name string) *model.Table {
 	meta, ok := t.tableMeta[name]
 	if !ok {
@@ -87,13 +122,16 @@ func (t *TiDBState) findTableByName(name string) *model.Table {
 }
 
 func (t *TiDBState) SetResultTable(tables []*model.Table) {
-	//logging.StatusLog().Debug("set table", zap.Any("table", tables))
+	//logging.StatusLog().Debug("set table", zap.Stack("stack"))
+	maps.Clear(t.resultTable)
 	for _, table := range tables {
+		//logging.StatusLog().Debug("set table", zap.Any("table", tables))
 		t.resultTable[table.Name()] = table
 	}
 }
 
 func (t *TiDBState) AppendResultTable(table *model.Table) {
+	//logging.StatusLog().Debug("append table", zap.String("name", table.Name()))
 	//logging.StatusLog().Debug("add table", zap.String("table", table.Name()), zap.String("alias", table.AliasName.String()))
 	t.resultTable[table.Name()] = table
 }
@@ -128,6 +166,10 @@ func (t *TiDBState) TableMeta(name string) (*model.Table, bool) {
 
 func (t *TiDBState) AddTableMeta(name string, tbl *model.Table) {
 	t.tableMeta[name] = tbl
+}
+
+func (t *TiDBState) TableMetaCnt() int {
+	return len(t.tableMeta)
 }
 
 func (t *TiDBState) CreateTmpColumn() string {

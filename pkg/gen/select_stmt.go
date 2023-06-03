@@ -184,7 +184,7 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 	columns := make([]gmodel.Column, 0)
 	row := make(map[string]*connection.QueryItem)
 	for _, table := range t.globalState.GetResultTable() {
-		//logging.StatusLog().Debug("table", zap.String("table", table.Name()), zap.Any("columns", table.Columns()))
+		logging.StatusLog().Debug("table", zap.String("table", table.Name()))
 		for _, column := range table.Columns() {
 			asname := t.globalState.CreateTmpColumn()
 			selectField := ast.SelectField{
@@ -198,6 +198,6 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 			row[asname] = t.globalState.PivotRows[column.String()]
 		}
 	}
-	logging.StatusLog().Debug("walkResultFields", zap.Any("columns", columns))
+	//logging.StatusLog().Debug("walkResultFields", zap.Any("columns", columns))
 	return columns, row
 }

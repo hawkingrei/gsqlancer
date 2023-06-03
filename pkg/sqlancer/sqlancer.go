@@ -31,7 +31,7 @@ func NewSQLancer(cfg *config.Config) *SQLancer {
 }
 
 func (s *SQLancer) Run() {
-	for i := 0; i < int(s.cfg.Concurrency()); i++ {
+	for i := 0; i < int(s.cfg.Concurrency); i++ {
 		conn, err := s.dbConn.GetConnection()
 		if err != nil {
 			log.Fatal("failed to get connection", zap.Error(err))
@@ -48,7 +48,7 @@ func (s *SQLancer) Stop() {
 }
 
 func (s *SQLancer) tick() {
-	ticker := time.NewTicker(s.cfg.MaxTestTime())
+	ticker := time.NewTicker(s.cfg.MaxTestTime)
 	pingTicker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	for {

@@ -12,6 +12,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/report"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
+	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/dumpling/context"
 	"github.com/pingcap/tidb/parser/ast"
@@ -40,6 +41,7 @@ type Executor struct {
 	action      ActionType
 	useDatabase string
 	report      *report.Reporter
+
 	// copy from
 	batch        int
 	roundInBatch int
@@ -48,6 +50,7 @@ type Executor struct {
 func NewExecutor(id int, cfg *config.Config, exitCh chan struct{}, conn *realdb.DBConn, report *report.Reporter) *Executor {
 	action := gen.NewTiDBState()
 	return &Executor{
+		action:      ActionCreateTableStmt,
 		ctx:         context.Background(),
 		state:       action,
 		cfg:         cfg,
@@ -67,16 +70,14 @@ func (e *Executor) Run() {
 		logging.StatusLog().Error("fail to init database", zap.Error(err))
 	}
 	logging.StatusLog().Info("init database success", zap.Int("id", e.id))
-
 	for {
 		select {
 		case <-e.exitCh:
 			return
 		default:
 		}
-		e.Next()
 		e.Do()
-		e.progress()
+		e.Next()
 	}
 }
 
@@ -126,6 +127,7 @@ func (e *Executor) progress() bool {
 	case approachNoREC, approachTLP:
 
 	}
+	e.state.Reset()
 	return true
 }
 
@@ -133,7 +135,10 @@ func (e *Executor) progress() bool {
 // it may move to another struct
 func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*model.Table, error) {
 	result := make(map[string]*connection.QueryItem)
-	usedTables := e.state.GetResultTable()
+	usedTables := e.state.GetRandTables()
+	if len(usedTables) > 2 {
+		usedTables = util.ChoiceSubset(usedTables, rand.Intn(len(usedTables)-2)+2)
+	}
 	var reallyUsed []*model.Table
 
 	for _, i := range usedTables {

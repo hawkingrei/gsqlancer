@@ -21,26 +21,26 @@ func (c *DBConn) Close() error {
 
 func (c *DBConn) ExecContext(ctx context.Context, query string, args ...interface{}) error {
 	if query == "" {
-		logging.StatusLog().Error("empty sql", zap.Stack("stack"))
+		logging.SQLLOG().Error("empty sql", zap.Stack("stack"))
 		return nil
 	}
 	_, err := c.conn.ExecContext(ctx, query, args...)
 	if err != nil {
-		logging.StatusLog().Error("fail to execute sql", zap.String("sql", query), zap.Error(err))
+		logging.SQLLOG().Error("fail to execute sql", zap.String("sql", query), zap.Error(err))
 		return err
 	}
-	logging.StatusLog().Info("success to execute sql", zap.String("sql", query))
+	logging.SQLLOG().Info("success to execute sql", zap.String("sql", query))
 	return err
 }
 
 func (c *DBConn) MustExec(ctx context.Context, query *model.SQL) error {
 	_, err := c.conn.ExecContext(ctx, query.SQLStmt)
 	if err != nil {
-		logging.StatusLog().Error("fail to execute sql",
+		logging.SQLLOG().Error("fail to execute sql",
 			zap.String("type", query.SQLType.String()), zap.String("sql", query.SQLStmt), zap.Error(err))
 		return err
 	}
-	logging.StatusLog().Info("success to execute sql",
+	logging.SQLLOG().Info("success to execute sql",
 		zap.String("type", query.SQLType.String()), zap.String("sql", query.SQLStmt))
 	return nil
 }
@@ -49,32 +49,32 @@ func (c *DBConn) MustExec(ctx context.Context, query *model.SQL) error {
 // The args are for any placeholder parameters in the query.
 func (c *DBConn) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	if query == "" {
-		logging.StatusLog().Error("empty sql", zap.Stack("stack"))
+		logging.SQLLOG().Error("empty sql", zap.Stack("stack"))
 		return nil, nil
 	}
 	rows, err := c.conn.QueryContext(ctx, query, args...)
 	if err != nil {
-		logging.StatusLog().Fatal("fail to query sql", zap.String("sql", query), zap.Error(err), zap.Stack("stack"))
+		logging.SQLLOG().Fatal("fail to query sql", zap.String("sql", query), zap.Error(err), zap.Stack("stack"))
 		return nil, err
 	}
-	logging.StatusLog().Info("success to query sql", zap.String("sql", query))
+	logging.SQLLOG().Info("success to query sql", zap.String("sql", query))
 	return rows, err
 }
 
 // Select run select statement and return query result
 func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) ([]connection.QueryItems, error) {
 	if stmt == "" {
-		logging.StatusLog().Error("empty sql", zap.Stack("stack"))
+		logging.SQLLOG().Error("empty sql", zap.Stack("stack"))
 		return nil, nil
 	}
 	start := time.Now()
 	rows, err := c.conn.QueryContext(ctx, stmt, args...)
 	if err != nil {
-		logging.StatusLog().Fatal("fail to query sql", zap.String("sql", stmt), zap.Error(err), zap.Duration("time", time.Since(start)), zap.Stack("stack"))
+		logging.SQLLOG().Fatal("fail to query sql", zap.String("sql", stmt), zap.Error(err), zap.Duration("time", time.Since(start)), zap.Stack("stack"))
 		return []connection.QueryItems{}, err
 	}
 	if rows.Err() != nil {
-		logging.StatusLog().Fatal("fail to query sql", zap.String("sql", stmt), zap.Error(rows.Err()), zap.Duration("time", time.Since(start)), zap.Stack("stack"))
+		logging.SQLLOG().Fatal("fail to query sql", zap.String("sql", stmt), zap.Error(rows.Err()), zap.Duration("time", time.Since(start)), zap.Stack("stack"))
 		return []connection.QueryItems{}, rows.Err()
 	}
 
@@ -90,7 +90,7 @@ func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) (
 			rowResultSets = append(rowResultSets, new(interface{}))
 		}
 		if err := rows.Scan(rowResultSets...); err != nil {
-			logging.StatusLog().Error("fail to scan sql", zap.String("sql", stmt), zap.Error(err))
+			logging.SQLLOG().Error("fail to scan sql", zap.String("sql", stmt), zap.Error(err))
 		}
 		for index, resultItem := range rowResultSets {
 			r := *resultItem.(*interface{})
@@ -107,6 +107,6 @@ func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) (
 		}
 		result = append(result, resultRow)
 	}
-	logging.StatusLog().Info("success to query sql", zap.String("sql", stmt), zap.Duration("duration", time.Since(start)))
+	logging.SQLLOG().Info("success to query sql", zap.String("sql", stmt), zap.Duration("duration", time.Since(start)))
 	return result, nil
 }
