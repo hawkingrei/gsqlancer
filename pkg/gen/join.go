@@ -59,15 +59,8 @@ func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
 			panic("unreachable")
 		}
 		allTables := append(leftTables, rightTable)
-		//usedTables := t.globalState.GetResultTable()
 		t.globalState.SetResultTable(allTables)
-		//defer func() {
-		//	t.globalState.SetResultTable(usedTables)
-		//}()
 		node.On = &ast.OnCondition{}
-		// for _, table := range genCtx.ResultTables {
-		// 	fmt.Println(table.Name, table.AliasName)
-		// }
 		node.On.Expr = t.ConditionClause()
 		return
 	}

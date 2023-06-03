@@ -106,7 +106,7 @@ func (t *opFuncArgNDTable) Filter(args []*uint64, ret *uint64) ([][]uint64, erro
 			}
 		}
 		if ret == nil || *ret == i[len(i)-1] {
-			result = append(result, i[:])
+			result = append(result, i)
 		}
 	nextLoop:
 	}

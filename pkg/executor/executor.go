@@ -180,11 +180,6 @@ func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns 
 }
 
 func compareQueryItem(left *connection.QueryItem, right *connection.QueryItem) bool {
-	if left != nil && right != right {
-		return true
-	} else {
-		return false
-	}
 	// if left.ValType.Name() != right.ValType.Name() {
 	// 	return false
 	// }

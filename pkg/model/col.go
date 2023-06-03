@@ -54,10 +54,10 @@ func Type2Tp(t int) byte {
 type _Column struct {
 	defaultValue any
 	name         string
-	setValue     []string //for enum , set data type
+	setValue     []string // for enum , set data type
 	kind         int
-	filedTypeM   int //such as:  VARCHAR(10) ,    filedTypeM = 10
-	filedTypeD   int //such as:  DECIMAL(10,5) ,  filedTypeD = 5
+	filedTypeM   int // such as:  VARCHAR(10) ,    filedTypeM = 10
+	filedTypeD   int // such as:  DECIMAL(10,5) ,  filedTypeD = 5
 }
 
 func RandGenColumn(name string) *_Column {
