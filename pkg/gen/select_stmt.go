@@ -8,6 +8,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/gen/hint"
 	gmodel "github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
+	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/model"
@@ -69,6 +70,7 @@ func (t *TiDBSelectStmtGen) TableRefsClause() *ast.TableRefsClause {
 		Right: &ast.TableName{},
 	}}
 	usedTables := t.globalState.GetRandTableList()
+	usedTables = util.ChoiceSubset(usedTables, rand.Intn(len(usedTables)-2)+2)
 	var node = clause.TableRefs
 	// TODO: it works, but need to refactor
 	if len(usedTables) == 1 {
