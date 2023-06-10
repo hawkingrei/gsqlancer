@@ -160,9 +160,9 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 	return result, reallyUsed, nil
 }
 
-func (e *Executor) verifyPQS(originRow map[string]*connection.QueryItem, columns []model.Column, resultSets []connection.QueryItems) bool {
+func (e *Executor) verifyPQS(pivotRows map[string]*connection.QueryItem, columns []model.Column, resultSets []connection.QueryItems) bool {
 	for _, row := range resultSets {
-		if e.checkRow(originRow, columns, row) {
+		if e.checkRow(pivotRows, columns, row) {
 			return true
 		}
 	}
@@ -171,7 +171,8 @@ func (e *Executor) verifyPQS(originRow map[string]*connection.QueryItem, columns
 
 func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns []model.Column, resultSet connection.QueryItems) bool {
 	for i, c := range columns {
-		// fmt.Printf("i: %d, column: %+v, left: %+v, right: %+v", i, c, originRow[c], resultSet[i])
+		logging.StatusLog().Info(fmt.Sprintf("i: %d, column: %+v, left: %+v, right: %+v", i, c, originRow[c.AliasName.String()], resultSet[i]))
+
 		if !compareQueryItem(originRow[c.AliasName.String()], resultSet[i]) {
 			return false
 		}
@@ -180,11 +181,10 @@ func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns 
 }
 
 func compareQueryItem(left *connection.QueryItem, right *connection.QueryItem) bool {
-	// if left.ValType.Name() != right.ValType.Name() {
-	// 	return false
-	// }
-	if left.Null != right.Null {
+	err := left.MustSame(right)
+	if err != nil {
+		logging.StatusLog().Fatal("compare query item failed", zap.Error(err))
 		return false
 	}
-	return (left.Null && right.Null) || (left.ValString == right.ValString)
+	return true
 }
