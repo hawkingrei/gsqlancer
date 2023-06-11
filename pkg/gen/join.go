@@ -73,7 +73,7 @@ func (t *TiDBSelectStmtGen) ConditionClause() ast.ExprNode {
 	// TODO: more ops
 	exprType := types.TypeNumberLikeArg
 	var err error
-	retry := 2
+	retry := 10
 	node, val, err := t.generateExpr(exprType, t.c.Depth)
 	for err != nil && retry > 0 {
 		log.L().Error("generate where expr error", zap.Error(err))
