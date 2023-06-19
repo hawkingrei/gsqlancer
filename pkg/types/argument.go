@@ -59,6 +59,7 @@ type argTable interface {
 	Filter([]*uint64, *uint64) ([][]uint64, error)
 	Insert(uint64, ...uint64)
 }
+
 type opFuncArg0DTable uint64 // only the return type
 type opFuncArgNDTable struct {
 	table [][]uint64
