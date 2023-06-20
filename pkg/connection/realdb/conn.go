@@ -73,6 +73,7 @@ func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) (
 	}
 	start := time.Now()
 	rows, err := c.conn.QueryContext(ctx, stmt, args...)
+	defer rows.Close()
 	if err != nil {
 		logging.StatusLog().Fatal("fail to query sql", zap.String("sql", stmt), zap.Error(err), zap.Duration("time", time.Since(start)), zap.Stack("stack"))
 		return []connection.QueryItems{}, err

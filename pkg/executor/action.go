@@ -29,9 +29,9 @@ func (e *Executor) Next() {
 	case ActionAnalyzeStmt:
 		e.action = ActionSelectStmt
 	case ActionCreateTableStmt:
-		e.action = ActionAnalyzeStmt
+		e.action = ActionInsertTableStmt
 	case ActionInsertTableStmt:
-		e.action = ActionSelectStmt
+		e.action = ActionAnalyzeStmt
 	case ActionSelectStmt:
 		e.action = util.Choice([]ActionType{ActionCreateTableStmt, ActionInsertTableStmt})
 	}
@@ -41,7 +41,6 @@ func (e *Executor) Do() bool {
 	switch e.action {
 	case ActionAnalyzeStmt:
 		e.gen.AnalyzeTable()
-
 		logging.StatusLog().Info("ActionAnalyzeStmt")
 	case ActionCreateTableStmt:
 		logging.StatusLog().Info("ActionCreateTableStmt")

@@ -17,6 +17,7 @@ import (
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/dumpling/context"
 	"github.com/pingcap/tidb/parser/ast"
+	"github.com/pingcap/tidb/util/mathutil"
 	"go.uber.org/zap"
 )
 
@@ -80,6 +81,7 @@ func (e *Executor) Run() {
 		for !e.Do() {
 			continue
 		}
+		logging.StatusLog().Info("Done")
 		e.Next()
 	}
 }
@@ -104,18 +106,18 @@ func (e *Executor) progress() bool {
 		}
 	}
 	approach := approaches[rand.Intn(len(approaches))]
-	var retry bool
+	var succeed bool
 	switch approach {
 	case approachPQS:
-		retry = e.DoPGS()
+		succeed = e.DoPGS()
 	case approachNoREC, approachTLP:
 
 	}
 	e.state.Reset()
-	return retry
+	return succeed
 }
 
-func (e *Executor) DoPGS() (retry bool) {
+func (e *Executor) DoPGS() (success bool) {
 	logging.StatusLog().Info("do pgs")
 	rawPivotRows, usedTables, err := e.ChoosePivotedRow()
 	if err != nil {
@@ -123,17 +125,18 @@ func (e *Executor) DoPGS() (retry bool) {
 	}
 	if len(rawPivotRows) == 0 {
 		logging.StatusLog().Info("no pivot row, restart")
-		return true
+		return false
 	}
-	logging.StatusLog().Info("rawPivotRows", zap.Any("rows", rawPivotRows), zap.Any("tables", usedTables))
+	//logging.StatusLog().Info("rawPivotRows", zap.Any("rows", rawPivotRows), zap.Any("tables", usedTables))
 	selectAST, selectSQL, columns, pivotRows, err := e.gen.GenPQSSelectStmt(rawPivotRows, usedTables)
 	if err != nil {
 		logging.StatusLog().Fatal("generate PQS statement error", zap.Error(err))
 	}
+	log.Info("start query")
 	resultRows, err := e.conn.Select(e.ctx, selectSQL)
 	if err != nil {
 		logging.StatusLog().Info("select", zap.Error(err))
-		return true
+		return false
 	}
 
 	correct := e.verifyPQS(pivotRows, columns, resultRows)
@@ -143,10 +146,10 @@ func (e *Executor) DoPGS() (retry bool) {
 			// TODO: add known bug log
 			return true
 		}
-		return false
+		return true
 	}
 	log.Info("pass")
-	return false
+	return true
 }
 
 // ChoosePivotedRow choose a row
@@ -155,7 +158,7 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 	result := make(map[string]*connection.QueryItem)
 	usedTables := e.state.GetRandTables()
 	if len(usedTables) > 2 {
-		usedTables = util.ChoiceSubset(usedTables, rand.Intn(len(usedTables)-2)+2)
+		usedTables = util.ChoiceSubset(usedTables, mathutil.Min(rand.Intn(len(usedTables)-2)+2, 5))
 	}
 	var reallyUsed []*model.Table
 
@@ -192,7 +195,7 @@ func (e *Executor) verifyPQS(pivotRows map[string]*connection.QueryItem, columns
 
 func (e *Executor) checkRow(pivotRows map[string]*connection.QueryItem, columns []model.Column, resultSet connection.QueryItems) bool {
 	for i, c := range columns {
-		logging.StatusLog().Info(fmt.Sprintf("i: %d, column: %+v, left: %+v, right: %+v", i, c, pivotRows[c.AliasName.String()], resultSet[i]))
+		//logging.StatusLog().Info(fmt.Sprintf("i: %d, column: %+v, left: %+v, right: %+v", i, c, pivotRows[c.AliasName.String()], resultSet[i]))
 		_, ok := pivotRows[c.AliasName.String()]
 		if !ok {
 			logging.StatusLog().Fatal("pivotRows[c.AliasName.String()] not exist")

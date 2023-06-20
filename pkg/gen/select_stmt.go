@@ -148,7 +148,7 @@ func (t *TiDBSelectStmtGen) tableHintsExpr(usedTables []*gmodel.Table) []*ast.Ta
 }
 
 func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Column, map[string]*connection.QueryItem) {
-	logging.StatusLog().Info("t.globalState.PivotRows", zap.Any("t.globalState.PivotRows", t.globalState.PivotRows))
+	//logging.StatusLog().Info("t.globalState.PivotRows", zap.Any("t.globalState.PivotRows", t.globalState.PivotRows))
 	if t.c.EnableNoRECApproach {
 		exprNode := &parser_driver.ValueExpr{}
 		tp := tidb_types.NewFieldType(mysql.TypeLonglong)
@@ -201,7 +201,7 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 			logging.StatusLog().Info("no real name", zap.String("table", table.Name()))
 			realName = table.Name()
 		}
-		logging.StatusLog().Info("table", zap.String("table", table.Name()), zap.String("real", realName))
+		//logging.StatusLog().Info("table", zap.String("table", table.Name()), zap.String("real", realName))
 		for _, column := range table.Columns() {
 			asname := t.globalState.CreateTmpColumn()
 			selectField := ast.SelectField{
