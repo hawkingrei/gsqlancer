@@ -45,7 +45,7 @@ func (g *generator) InsertTable(table string) (*model.SQL, error) {
 	return g.insertGen.GenerateDMLInsertByTable(table)
 }
 
-func (g *generator) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem,
-	usedTables []*model.Table) (selectStmtNode *ast.SelectStmt, sql string, columnInfos []model.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
+func (g *generator) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem, usedTables []*model.Table) (
+	selectStmtNode *ast.SelectStmt, sql string, columnInfos []model.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
 	return g.selectGen.GenPQSSelectStmt(pivotRows, usedTables)
 }

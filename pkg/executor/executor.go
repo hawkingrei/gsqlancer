@@ -14,6 +14,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
+	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/dumpling/context"
 	"github.com/pingcap/tidb/parser/ast"
 	"go.uber.org/zap"
@@ -76,7 +77,9 @@ func (e *Executor) Run() {
 			return
 		default:
 		}
-		e.Do()
+		for !e.Do() {
+			continue
+		}
 		e.Next()
 	}
 }
@@ -101,34 +104,49 @@ func (e *Executor) progress() bool {
 		}
 	}
 	approach := approaches[rand.Intn(len(approaches))]
+	var retry bool
 	switch approach {
 	case approachPQS:
-		rawPivotRows, usedTables, err := e.ChoosePivotedRow()
-		if err != nil {
-			logging.StatusLog().Fatal("choose pivot row failed", zap.Error(err))
-		}
-		selectAST, selectSQL, columns, pivotRows, err := e.gen.GenPQSSelectStmt(rawPivotRows, usedTables)
-		if err != nil {
-			logging.StatusLog().Fatal("generate PQS statement error", zap.Error(err))
-		}
-		resultRows, err := e.conn.Select(e.ctx, selectSQL)
-		if err != nil {
-			return true
-		}
-		correct := e.verifyPQS(pivotRows, columns, resultRows)
-		if correct {
-			dust := knownbugs.NewDustbin([]ast.Node{selectAST}, pivotRows)
-			if dust.IsKnownBug() {
-				// TODO: add known bug log
-				return true
-			}
-			return false
-		}
+		retry = e.DoPGS()
 	case approachNoREC, approachTLP:
 
 	}
 	e.state.Reset()
-	return true
+	return retry
+}
+
+func (e *Executor) DoPGS() (retry bool) {
+	logging.StatusLog().Info("do pgs")
+	rawPivotRows, usedTables, err := e.ChoosePivotedRow()
+	if err != nil {
+		logging.StatusLog().Fatal("choose pivot row failed", zap.Error(err))
+	}
+	if len(rawPivotRows) == 0 {
+		logging.StatusLog().Info("no pivot row, restart")
+		return true
+	}
+	logging.StatusLog().Info("rawPivotRows", zap.Any("rows", rawPivotRows), zap.Any("tables", usedTables))
+	selectAST, selectSQL, columns, pivotRows, err := e.gen.GenPQSSelectStmt(rawPivotRows, usedTables)
+	if err != nil {
+		logging.StatusLog().Fatal("generate PQS statement error", zap.Error(err))
+	}
+	resultRows, err := e.conn.Select(e.ctx, selectSQL)
+	if err != nil {
+		logging.StatusLog().Info("select", zap.Error(err))
+		return true
+	}
+
+	correct := e.verifyPQS(pivotRows, columns, resultRows)
+	if correct {
+		dust := knownbugs.NewDustbin([]ast.Node{selectAST}, pivotRows)
+		if dust.IsKnownBug() {
+			// TODO: add known bug log
+			return true
+		}
+		return false
+	}
+	log.Info("pass")
+	return false
 }
 
 // ChoosePivotedRow choose a row
@@ -149,18 +167,21 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 			return nil, nil, err
 		}
 		if len(exeRes) > 0 {
-			for _, c := range exeRes[0] {
-				// panic(fmt.Sprintf("no rows in table %s", i.Column))
-				tableColumn := types.Column{Table: types.CIStr(i.Name()), Name: types.CIStr(c.ValType.Name())}
-				result[tableColumn.String()] = c
+			for idx := range exeRes[0] {
+				tableColumn := types.Column{Table: types.CIStr(i.Name()), Name: types.CIStr(exeRes[0][idx].ValType.Name())}
+				result[tableColumn.String()] = exeRes[0][idx]
 			}
 			reallyUsed = append(reallyUsed, i)
+		} else {
+			logging.StatusLog().Info("no row", zap.String("table", i.Name()))
 		}
 	}
+	//log.Info("ChoosePivotedRow", zap.Any("result", result), zap.Any("usedTables", usedTables))
 	return result, reallyUsed, nil
 }
 
 func (e *Executor) verifyPQS(pivotRows map[string]*connection.QueryItem, columns []model.Column, resultSets []connection.QueryItems) bool {
+	logging.StatusLog().Info("verifyPQS", zap.Any("columns", columns[0]))
 	for _, row := range resultSets {
 		if e.checkRow(pivotRows, columns, row) {
 			return true
@@ -169,11 +190,14 @@ func (e *Executor) verifyPQS(pivotRows map[string]*connection.QueryItem, columns
 	return false
 }
 
-func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns []model.Column, resultSet connection.QueryItems) bool {
+func (e *Executor) checkRow(pivotRows map[string]*connection.QueryItem, columns []model.Column, resultSet connection.QueryItems) bool {
 	for i, c := range columns {
-		logging.StatusLog().Info(fmt.Sprintf("i: %d, column: %+v, left: %+v, right: %+v", i, c, originRow[c.AliasName.String()], resultSet[i]))
-
-		if !compareQueryItem(originRow[c.AliasName.String()], resultSet[i]) {
+		logging.StatusLog().Info(fmt.Sprintf("i: %d, column: %+v, left: %+v, right: %+v", i, c, pivotRows[c.AliasName.String()], resultSet[i]))
+		_, ok := pivotRows[c.AliasName.String()]
+		if !ok {
+			logging.StatusLog().Fatal("pivotRows[c.AliasName.String()] not exist")
+		}
+		if !compareQueryItem(pivotRows[c.AliasName.String()], resultSet[i]) {
 			return false
 		}
 	}
@@ -181,10 +205,18 @@ func (e *Executor) checkRow(originRow map[string]*connection.QueryItem, columns 
 }
 
 func compareQueryItem(left *connection.QueryItem, right *connection.QueryItem) bool {
-	err := left.MustSame(right)
-	if err != nil {
-		logging.StatusLog().Fatal("compare query item failed", zap.Error(err))
+	// if left.ValType.Name() != right.ValType.Name() {
+	// 	return false
+	// }
+	if left == nil {
+		logging.StatusLog().Fatal("left is nil")
+	}
+	if right == nil {
+		logging.StatusLog().Fatal("right is nil")
+	}
+	if left.Null != right.Null {
 		return false
 	}
-	return true
+
+	return (left.Null && right.Null) || (left.ValString == right.ValString)
 }

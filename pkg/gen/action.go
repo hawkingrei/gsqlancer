@@ -47,6 +47,9 @@ func NewTiDBState() *TiDBState {
 
 func (t *TiDBState) Reset() {
 	maps.Clear(t.resultTable)
+	maps.Clear(t.InUsedTable)
+	maps.Clear(t.TableAlias)
+	maps.Clear(t.PivotRows)
 	t.tmpColIndex.Store(0)
 	t.tmpTableIDGen.Store(0)
 }
@@ -90,7 +93,10 @@ func (t *TiDBState) RandGetTableID() string {
 }
 
 func (t *TiDBState) GetRandTableList() []string {
-	ids := maps.Keys(t.tableID)
+	ids := maps.Keys(t.InUsedTable)
+	if len(ids) == 1 {
+		return ids
+	}
 	rand.Shuffle(len(ids), func(i, j int) {
 		ids[i], ids[j] = ids[j], ids[i]
 	})
@@ -147,6 +153,15 @@ func (t *TiDBState) CreateTmpTable() string {
 
 func (t *TiDBState) SetTableAlias(table string, alias string) {
 	t.TableAlias[table] = alias
+}
+
+func (t *TiDBState) GetRealNameByAlias(table string) (string, bool) {
+	for k, v := range t.TableAlias {
+		if v == table {
+			return k, true
+		}
+	}
+	return "", false
 }
 
 func (t *TiDBState) GetInUsedTable() []*model.Table {

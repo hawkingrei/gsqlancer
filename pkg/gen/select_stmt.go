@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
@@ -10,12 +11,14 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
+	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/model"
 	"github.com/pingcap/tidb/parser/mysql"
 	tidb_types "github.com/pingcap/tidb/types"
 	parser_driver "github.com/pingcap/tidb/types/parser_driver"
 	"go.uber.org/zap"
+	"golang.org/x/exp/maps"
 )
 
 type TiDBSelectStmtGen struct {
@@ -70,7 +73,7 @@ func (t *TiDBSelectStmtGen) TableRefsClause() *ast.TableRefsClause {
 		Right: &ast.TableName{},
 	}}
 	usedTables := t.globalState.GetRandTableList()
-	usedTables = util.ChoiceSubset(usedTables, rand.Intn(len(usedTables)-2)+2)
+	log.Info("GetRandTableList", zap.Any("usedTables", usedTables))
 	var node = clause.TableRefs
 	// TODO: it works, but need to refactor
 	if len(usedTables) == 1 {
@@ -82,7 +85,13 @@ func (t *TiDBSelectStmtGen) TableRefsClause() *ast.TableRefsClause {
 			},
 			Right: nil,
 		}
+		return clause
 	}
+	log.Info("TableRefsClause", zap.Any("usedTables", usedTables))
+	if len(usedTables) != 2 {
+		usedTables = util.ChoiceSubset(usedTables, rand.Intn(len(usedTables)-2)+2)
+	}
+
 	for i := len(usedTables) - 1; i >= 1; i-- {
 		var tp ast.JoinType
 		if !t.c.EnableLeftRightJoin {
@@ -139,6 +148,7 @@ func (t *TiDBSelectStmtGen) tableHintsExpr(usedTables []*gmodel.Table) []*ast.Ta
 }
 
 func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Column, map[string]*connection.QueryItem) {
+	logging.StatusLog().Info("t.globalState.PivotRows", zap.Any("t.globalState.PivotRows", t.globalState.PivotRows))
 	if t.c.EnableNoRECApproach {
 		exprNode := &parser_driver.ValueExpr{}
 		tp := tidb_types.NewFieldType(mysql.TypeLonglong)
@@ -186,7 +196,12 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 	columns := make([]gmodel.Column, 0)
 	row := make(map[string]*connection.QueryItem)
 	for _, table := range t.globalState.GetResultTable() {
-		logging.StatusLog().Debug("table", zap.String("table", table.Name()))
+		realName, ok := t.globalState.GetRealNameByAlias(table.Name())
+		if !ok {
+			logging.StatusLog().Info("no real name", zap.String("table", table.Name()))
+			realName = table.Name()
+		}
+		logging.StatusLog().Info("table", zap.String("table", table.Name()), zap.String("real", realName))
 		for _, column := range table.Columns() {
 			asname := t.globalState.CreateTmpColumn()
 			selectField := ast.SelectField{
@@ -197,7 +212,12 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 			col := column.Clone()
 			col.AliasName = model.NewCIStr(asname)
 			columns = append(columns, col)
-			row[asname] = t.globalState.PivotRows[column.String()]
+			key := fmt.Sprintf("%s.%s", realName, column.Name())
+			rows, ok := t.globalState.PivotRows[key]
+			if !ok {
+				logging.StatusLog().Info("no PivotRows", zap.String("column", column.Name()), zap.String("key", key), zap.Any("keys", maps.Keys(t.globalState.PivotRows)))
+			}
+			row[asname] = rows
 		}
 	}
 	//logging.StatusLog().Debug("walkResultFields", zap.Any("columns", columns))
