@@ -65,6 +65,20 @@ func (c *DBConn) QueryContext(ctx context.Context, query string, args ...interfa
 	return rows, err
 }
 
+func (c *DBConn) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	if query == "" {
+		logging.SQLLOG().Error("empty sql", zap.Stack("stack"))
+		return nil
+	}
+	rows := c.conn.QueryRowContext(ctx, query, args...)
+	if rows.Err() != nil {
+		logging.SQLLOG().Error("fail to query sql", zap.String("sql", query), zap.Error(rows.Err()), zap.Stack("stack"))
+		return nil
+	}
+	logging.SQLLOG().Info("success to query sql", zap.String("sql", query))
+	return rows
+}
+
 // Select run select statement and return query result
 func (c *DBConn) Select(ctx context.Context, stmt string, args ...interface{}) ([]connection.QueryItems, error) {
 	if stmt == "" {

@@ -183,6 +183,10 @@ func (t *TiDBState) AddTableMeta(name string, tbl *model.Table) {
 	t.tableMeta[name] = tbl
 }
 
+func (t *TiDBState) GetAllTableName() []string {
+	return maps.Keys(t.tableMeta)
+}
+
 func (t *TiDBState) TableMetaCnt() int {
 	return len(t.tableMeta)
 }

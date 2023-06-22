@@ -1,6 +1,8 @@
 package executor
 
 import (
+	"fmt"
+
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"go.uber.org/zap"
@@ -13,6 +15,7 @@ const (
 	ActionCreateTableStmt
 	ActionInsertTableStmt
 	ActionSelectStmt
+	ActionDeleteTable
 
 	defaultTiflashReplicasCnt = 1
 )
@@ -22,6 +25,7 @@ var AllAction = []ActionType{
 	ActionCreateTableStmt,
 	ActionInsertTableStmt,
 	ActionSelectStmt,
+	ActionDeleteTable,
 }
 
 func (e *Executor) Next() {
@@ -33,7 +37,9 @@ func (e *Executor) Next() {
 	case ActionInsertTableStmt:
 		e.action = ActionAnalyzeStmt
 	case ActionSelectStmt:
-		e.action = util.Choice([]ActionType{ActionCreateTableStmt, ActionInsertTableStmt})
+		e.action = util.Choice([]ActionType{ActionCreateTableStmt, ActionDeleteTable})
+	case ActionDeleteTable:
+		e.action = ActionInsertTableStmt
 	}
 }
 
@@ -82,6 +88,24 @@ func (e *Executor) Do() bool {
 		if e.state.TableMetaCnt() > 2 {
 			logging.StatusLog().Info("ActionSelectStmt")
 			return e.progress()
+		}
+	case ActionDeleteTable:
+		logging.StatusLog().Info("ActionDeleteTable")
+		for _, tbl := range e.state.GetAllTableName() {
+			sql := "select count(*) from " + tbl
+			var line uint64
+			e.conn.QueryRowContext(e.ctx, sql).Scan(&line)
+			if line < 50 {
+				continue
+			}
+			sql = fmt.Sprintf("delete from %s limit %d", tbl, line/2)
+			err := e.conn.ExecContext(e.ctx, sql)
+			if err != nil {
+				logging.StatusLog().Error("fail to delete table", zap.Error(err))
+				return false
+			} else {
+				logging.StatusLog().Info("delete data", zap.String("table", tbl))
+			}
 		}
 	}
 	return true

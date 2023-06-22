@@ -184,7 +184,6 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 }
 
 func (e *Executor) verifyPQS(pivotRows map[string]*connection.QueryItem, columns []model.Column, resultSets []connection.QueryItems) bool {
-	logging.StatusLog().Info("verifyPQS", zap.Any("columns", columns[0]))
 	for _, row := range resultSets {
 		if e.checkRow(pivotRows, columns, row) {
 			return true
