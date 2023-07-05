@@ -43,7 +43,7 @@ func (i *TiDBInsertGenerator) walkInsertStmtForTable(node *ast.InsertStmt, table
 	node.Table.TableRefs.Left.(*ast.TableName).Name = model.NewCIStr(table.Name())
 	columns := i.walkColumns(&node.Columns, table)
 	i.walkLists(&node.Lists, columns)
-	return BufferOut(node)
+	return util.BufferOut(node)
 }
 
 func (i *TiDBInsertGenerator) walkColumns(columns *[]*ast.ColumnName, table *gmodel.Table) []gmodel.Column {

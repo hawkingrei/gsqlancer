@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hawkingrei/gsqlancer/pkg/gen"
+	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/stretchr/testify/assert"
@@ -266,7 +266,7 @@ func TLPTransTest(t *testing.T, parser *parser.Parser, testCase TLPTestCase) {
 		assert.True(t, assert.True(t, len(resultSetNode) == 1))
 	} else {
 		assert.True(t, len(resultSetNode) >= 2)
-		output, err := gen.BufferOut(resultSetNode[1])
+		output, err := util.BufferOut(resultSetNode[1])
 		assert.Nil(t, err)
 
 		expectNodes, warns, err := parser.Parse(testCase.expect, "", "")
@@ -274,7 +274,7 @@ func TLPTransTest(t *testing.T, parser *parser.Parser, testCase TLPTestCase) {
 		assert.Empty(t, warns)
 		assert.True(t, len(nodes) == 1)
 
-		expect, err := gen.BufferOut(expectNodes[0])
+		expect, err := util.BufferOut(expectNodes[0])
 		assert.Nil(t, err)
 		assert.Equal(t, expect, output)
 	}

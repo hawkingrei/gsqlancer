@@ -56,7 +56,7 @@ func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, c
 	selectStmtNode.Where = t.ConditionClause()
 	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
 	columnInfos, updatedPivotRows = t.walkResultFields(selectStmtNode)
-	sql, err = BufferOut(selectStmtNode)
+	sql, err = util.BufferOut(selectStmtNode)
 	return selectStmtNode, sql, columnInfos, updatedPivotRows, err
 }
 

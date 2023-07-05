@@ -3,6 +3,7 @@ package executor
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
@@ -112,7 +113,7 @@ func (e *Executor) progress() bool {
 	case approachPQS:
 		succeed = e.DoPGS()
 	case approachNoREC, approachTLP:
-		selectStmtNode, sql, columnInfos, updatedPivotRows, err := e.gen.SelectTable()
+		selectStmtNode, _, _, _, err := e.gen.SelectTable()
 		if err != nil {
 			logging.StatusLog().Error("generate normal SQL statement failed", zap.Error(err))
 		}
@@ -132,10 +133,35 @@ func (e *Executor) progress() bool {
 
 		nodesArr := transformer.RandTransformer(transformers...).Transform([]ast.ResultSetNode{selectStmtNode})
 		if len(nodesArr) < 2 {
-			sql, _ := util.BufferOut(selectAst)
+			sql, _ := util.BufferOut(selectStmtNode)
 			log.L().Warn("no enough sqls were generated", zap.String("error sql", sql), zap.Int("node length", len(nodesArr)))
-			return nil
+			return true
 		}
+		sqlInOneGroup := make([]string, 0)
+		resultSet := make([][]connection.QueryItems, 0)
+		for _, node := range nodesArr {
+			sql, err := util.BufferOut(node)
+			if err != nil {
+				log.L().Error("err on restoring", zap.Error(err))
+			} else {
+				resultRows, err := e.conn.Select(e.ctx, sql)
+				log.L().Debug(sql)
+				if err != nil {
+					log.L().Error("execSelect failed", zap.Error(err), zap.String("sql", sql))
+					return false
+				}
+				resultSet = append(resultSet, resultRows)
+			}
+			sqlInOneGroup = append(sqlInOneGroup, sql)
+		}
+		correct := checkResultSet(resultSet, true)
+		if !correct {
+			log.Error("last round SQLs", zap.Strings("", sqlInOneGroup))
+			log.Fatal("NoREC/TLP data verified failed")
+		}
+		//log.L().Info("check finished", zap.String("approach", "NoREC"), zap.Int("batch", p.batch), zap.Int("round", p.roundInBatch), zap.Bool("result", correct))
+		return true
+
 	}
 	e.state.Reset()
 	return succeed
@@ -245,4 +271,48 @@ func compareQueryItem(left *connection.QueryItem, right *connection.QueryItem) b
 	}
 
 	return (left.Null && right.Null) || (left.ValString == right.ValString)
+}
+
+// may sort input slice
+func checkResultSet(set [][]connection.QueryItems, ignoreSort bool) bool {
+	if len(set) < 2 {
+		return true
+	}
+
+	if ignoreSort {
+		for _, rows := range set {
+			sort.SliceStable(rows, func(i, j int) bool {
+				if len(rows[i]) > len(rows[j]) {
+					return false
+				} else if len(rows[i]) < len(rows[j]) {
+					return true
+				}
+				for k := 0; k < len(rows[i]); k++ {
+					if rows[i][k].String() > rows[j][k].String() {
+						return false
+					} else if rows[i][k].String() < rows[j][k].String() {
+						return true
+					}
+				}
+				return false
+			})
+		}
+	}
+	baseRows := set[0]
+	for i := 1; i < len(set); i++ {
+		if len(set[i]) != len(baseRows) {
+			return false
+		}
+		for j := range set[i] {
+			if len(set[i][j]) != len(baseRows[j]) {
+				return false
+			}
+			for k := range set[i][j] {
+				if !compareQueryItem(set[i][j][k], baseRows[j][k]) {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }

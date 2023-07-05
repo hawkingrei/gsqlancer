@@ -6,6 +6,7 @@ import (
 
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
+	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/parser/ast"
 	parsermodel "github.com/pingcap/tidb/parser/model"
@@ -87,7 +88,7 @@ func (e *TiDBTableGenerator) walkDDLCreateTable(index int,
 		node.Partition = nil
 	}
 	tableMeta = tableBuilder.Build()
-	sql, err = BufferOut(node)
+	sql, err = util.BufferOut(node)
 	if err != nil {
 		return "", "", nil, errors.Trace(err)
 	}
