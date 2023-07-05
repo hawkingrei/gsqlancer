@@ -1,11 +1,9 @@
 package gen
 
 import (
-	"bytes"
 	"math/rand"
 
 	"github.com/pingcap/tidb/parser/ast"
-	"github.com/pingcap/tidb/parser/format"
 	"github.com/pingcap/tidb/parser/mysql"
 )
 
@@ -43,17 +41,6 @@ func randColumnOptionAuto() *ast.ColumnOption {
 		opt.AutoRandOpt.RangeBits = 64
 	}
 	return opt
-}
-
-// BufferOut parser ast node to SQL string
-func BufferOut(node ast.Node) (string, error) {
-	out := new(bytes.Buffer)
-	restore := format.NewRestoreCtx(format.DefaultRestoreFlags, out)
-	err := node.Restore(restore)
-	if err != nil {
-		return "", err
-	}
-	return out.String(), nil
 }
 
 // Type2Tp conver type string to tp byte

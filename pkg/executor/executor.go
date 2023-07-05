@@ -11,6 +11,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/knownbugs"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/report"
+	"github.com/hawkingrei/gsqlancer/pkg/transformer"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
@@ -111,7 +112,30 @@ func (e *Executor) progress() bool {
 	case approachPQS:
 		succeed = e.DoPGS()
 	case approachNoREC, approachTLP:
+		selectStmtNode, sql, columnInfos, updatedPivotRows, err := e.gen.SelectTable()
+		if err != nil {
+			logging.StatusLog().Error("generate normal SQL statement failed", zap.Error(err))
+		}
+		var transformers []transformer.Transformer
+		if approach == approachNoREC {
+			transformers = append(transformers, transformer.NoREC)
+		}
+		if approach == approachTLP {
+			transformers = append(
+				transformers,
+				&transformer.TLPTrans{
+					Expr: &ast.ParenthesesExpr{Expr: e.gen.selectGen.ConditionClause()},
+					Tp:   transformer.RandTLPType(),
+				},
+			)
+		}
 
+		nodesArr := transformer.RandTransformer(transformers...).Transform([]ast.ResultSetNode{selectStmtNode})
+		if len(nodesArr) < 2 {
+			sql, _ := util.BufferOut(selectAst)
+			log.L().Warn("no enough sqls were generated", zap.String("error sql", sql), zap.Int("node length", len(nodesArr)))
+			return nil
+		}
 	}
 	e.state.Reset()
 	return succeed
