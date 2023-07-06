@@ -40,7 +40,8 @@ func DefaultConfig() *Config {
 		Concurrency:       1,
 		MaxTestTime:       6 * time.Hour,
 		db:                *realdb.DefaultConfig(),
-		EnablePQSApproach: true,
+		EnablePQSApproach: false,
+		EnableTLPApproach: true,
 	}
 }
 
