@@ -42,6 +42,29 @@ func (t *TiDBSelectStmtGen) GenPQSSelectStmt(pivotRows map[string]*connection.Qu
 	return t.Gen()
 }
 
+func (t *TiDBSelectStmtGen) GenSelectStmt(
+	usedTables []*gmodel.Table) (*ast.SelectStmt, string, error) {
+	t.globalState.SetInUsedTable(usedTables)
+	return t.CommonGen()
+}
+
+func (t *TiDBSelectStmtGen) CommonGen() (selectStmtNode *ast.SelectStmt, sql string, err error) {
+	selectStmtNode = &ast.SelectStmt{
+		SelectStmtOpts: &ast.SelectStmtOpts{
+			SQLCache: true,
+		},
+		Fields: &ast.FieldList{
+			Fields: []*ast.SelectField{},
+		},
+	}
+	selectStmtNode.From = t.TableRefsClause()
+	t.walkTableRefs(selectStmtNode.From.TableRefs)
+	selectStmtNode.Where = t.ConditionClause()
+	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
+	sql, err = util.BufferOut(selectStmtNode)
+	return nil, "", nil
+}
+
 func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, columnInfos []gmodel.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
 	selectStmtNode = &ast.SelectStmt{
 		SelectStmtOpts: &ast.SelectStmtOpts{

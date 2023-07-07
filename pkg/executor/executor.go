@@ -113,58 +113,67 @@ func (e *Executor) progress() bool {
 	case approachPQS:
 		succeed = e.DoPGS()
 	case approachNoREC, approachTLP:
-		selectStmtNode, _, _, _, err := e.gen.SelectTable()
-		if err != nil {
-			logging.StatusLog().Error("generate normal SQL statement failed", zap.Error(err))
-		}
-		var transformers []transformer.Transformer
-		if approach == approachNoREC {
-			transformers = append(transformers, transformer.NoREC)
-		}
-		if approach == approachTLP {
-			transformers = append(
-				transformers,
-				&transformer.TLPTrans{
-					Expr: &ast.ParenthesesExpr{Expr: e.gen.selectGen.ConditionClause()},
-					Tp:   transformer.RandTLPType(),
-				},
-			)
-		}
-
-		nodesArr := transformer.RandTransformer(transformers...).Transform([]ast.ResultSetNode{selectStmtNode})
-		if len(nodesArr) < 2 {
-			sql, _ := util.BufferOut(selectStmtNode)
-			log.L().Warn("no enough sqls were generated", zap.String("error sql", sql), zap.Int("node length", len(nodesArr)))
-			return true
-		}
-		sqlInOneGroup := make([]string, 0)
-		resultSet := make([][]connection.QueryItems, 0)
-		for _, node := range nodesArr {
-			sql, err := util.BufferOut(node)
-			if err != nil {
-				log.L().Error("err on restoring", zap.Error(err))
-			} else {
-				resultRows, err := e.conn.Select(e.ctx, sql)
-				log.L().Debug(sql)
-				if err != nil {
-					log.L().Error("execSelect failed", zap.Error(err), zap.String("sql", sql))
-					return false
-				}
-				resultSet = append(resultSet, resultRows)
-			}
-			sqlInOneGroup = append(sqlInOneGroup, sql)
-		}
-		correct := checkResultSet(resultSet, true)
-		if !correct {
-			log.Error("last round SQLs", zap.Strings("", sqlInOneGroup))
-			log.Fatal("NoREC/TLP data verified failed")
-		}
-		//log.L().Info("check finished", zap.String("approach", "NoREC"), zap.Int("batch", p.batch), zap.Int("round", p.roundInBatch), zap.Bool("result", correct))
-		return true
-
+		succeed = e.DoNoRECAndTLP(approach)
 	}
 	e.state.Reset()
 	return succeed
+}
+
+func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
+	usedTables := e.state.GetRandTables()
+	if len(usedTables) > 2 {
+		usedTables = util.ChoiceSubset(usedTables, mathutil.Min(rand.Intn(len(usedTables)-2)+2, 5))
+	}
+	selectStmtNode, _, _, _, err := e.gen.SelectTable()
+	if err != nil {
+		logging.StatusLog().Error("generate normal SQL statement failed", zap.Error(err))
+	}
+	var transformers []transformer.Transformer
+	switch approach {
+	case approachNoREC:
+		transformers = append(transformers, transformer.NoREC)
+	case approachTLP:
+		transformers = append(
+			transformers,
+			&transformer.TLPTrans{
+				Expr: &ast.ParenthesesExpr{Expr: e.gen.selectGen.ConditionClause()},
+				Tp:   transformer.RandTLPType(),
+			},
+		)
+	default:
+		logging.StatusLog().Fatal("unknown approach")
+	}
+
+	nodesArr := transformer.RandTransformer(transformers...).Transform([]ast.ResultSetNode{selectStmtNode})
+	if len(nodesArr) < 2 {
+		sql, _ := util.BufferOut(selectStmtNode)
+		logging.StatusLog().Warn("no enough sqls were generated", zap.String("error sql", sql), zap.Int("node length", len(nodesArr)))
+		return true
+	}
+	sqlInOneGroup := make([]string, 0)
+	resultSet := make([][]connection.QueryItems, 0)
+	for _, node := range nodesArr {
+		sql, err := util.BufferOut(node)
+		if err != nil {
+			logging.StatusLog().Error("err on restoring", zap.Error(err))
+		} else {
+			resultRows, err := e.conn.Select(e.ctx, sql)
+			logging.StatusLog().Debug(sql)
+			if err != nil {
+				logging.StatusLog().Error("execSelect failed", zap.Error(err), zap.String("sql", sql))
+				return false
+			}
+			resultSet = append(resultSet, resultRows)
+		}
+		sqlInOneGroup = append(sqlInOneGroup, sql)
+	}
+	correct := checkResultSet(resultSet, true)
+	if !correct {
+		logging.StatusLog().Error("last round SQLs", zap.Strings("", sqlInOneGroup))
+		logging.StatusLog().Fatal("NoREC/TLP data verified failed")
+	}
+	//log.L().Info("check finished", zap.String("approach", "NoREC"), zap.Int("batch", p.batch), zap.Int("round", p.roundInBatch), zap.Bool("result", correct))
+	return true
 }
 
 func (e *Executor) DoPGS() (success bool) {
