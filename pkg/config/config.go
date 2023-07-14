@@ -33,7 +33,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		log: &logging.LogConfig{
 			StatusLogPath: "./status.log",
-			SQLLogPath:    "/Users/weizhenwang/devel/opensource/gsqlancer/sql1.log",
+			SQLLogPath:    "/Users/weizhenwang/devel/opensource/gsqlancer/sql.log",
 		},
 		enablePartition:   true,
 		MaxCreateTable:    10,
