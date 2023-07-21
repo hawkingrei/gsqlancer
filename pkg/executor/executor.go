@@ -124,7 +124,8 @@ func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
 	if len(usedTables) > 2 {
 		usedTables = util.ChoiceSubset(usedTables, mathutil.Min(rand.Intn(len(usedTables)-2)+2, 5))
 	}
-	selectStmtNode, _, _, _, err := e.gen.SelectTable()
+	//log.Info("DoNoRECAndTLP", zap.Any("usedTables", usedTables))
+	selectStmtNode, _, err := e.gen.SelectTable(usedTables)
 	if err != nil {
 		logging.StatusLog().Error("generate normal SQL statement failed", zap.Error(err))
 	}
