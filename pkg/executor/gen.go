@@ -4,6 +4,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/config"
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
 	"github.com/hawkingrei/gsqlancer/pkg/gen"
+	"github.com/hawkingrei/gsqlancer/pkg/gen/setgen"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/pingcap/tidb/parser/ast"
 )
@@ -14,6 +15,7 @@ type generator struct {
 	tiflashReplicaStmtGen *gen.TiflashReplicaStmtGen
 	selectGen             *gen.TiDBSelectStmtGen
 	insertGen             *gen.TiDBInsertGenerator
+	setGen                *setgen.SetVariableGen
 }
 
 func newGenerator(c *config.Config, g *gen.TiDBState) generator {
@@ -48,4 +50,8 @@ func (g *generator) InsertTable(table string) (*model.SQL, error) {
 func (g *generator) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem, usedTables []*model.Table) (
 	selectStmtNode *ast.SelectStmt, sql string, columnInfos []model.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
 	return g.selectGen.GenPQSSelectStmt(pivotRows, usedTables)
+}
+
+func (g *generator) SetVariable() *model.SQL {
+	return g.setGen.Gen()
 }

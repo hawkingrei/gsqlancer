@@ -23,6 +23,5 @@ func NewSetVariableGen() *SetVariableGen {
 }
 
 func (s *SetVariableGen) Gen() string {
-	util.Choice(GlobalVariableGen)
-	return ""
+	return util.Choice(GlobalVariableGen).Gen()
 }
