@@ -62,7 +62,7 @@ func (t *TiDBSelectStmtGen) CommonGen() (selectStmtNode *ast.SelectStmt, sql str
 	selectStmtNode.Where = t.ConditionClause()
 	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
 	sql, err = util.BufferOut(selectStmtNode)
-	return nil, "", nil
+	return selectStmtNode, sql, nil
 }
 
 func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, columnInfos []gmodel.Column, updatedPivotRows map[string]*connection.QueryItem, err error) {
