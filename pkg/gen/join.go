@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
+func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join, asName bool) {
 	if node.Right == nil {
 		if node, ok := node.Left.(*ast.TableSource); ok {
 			if tn, ok := node.Source.(*ast.TableName); ok {
@@ -35,15 +35,19 @@ func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
 		)
 		switch node := node.Left.(type) {
 		case *ast.Join:
-			t.walkTableRefs(node)
+			t.walkTableRefs(node, asName)
 			leftTables = t.globalState.GetResultTable()
 		case *ast.TableSource:
 			if tn, ok := node.Source.(*ast.TableName); ok {
 				if table := t.globalState.findTableByName(tn.Name.L); table != nil {
-					tmpTable := t.globalState.CreateTmpTable()
-					node.AsName = model.NewCIStr(tmpTable)
-					leftTables = []*gmodel.Table{table.Rename(tmpTable)}
-					t.globalState.SetTableAlias(table.Name(), tmpTable)
+					if asName {
+						tmpTable := t.globalState.CreateTmpTable()
+						node.AsName = model.NewCIStr(tmpTable)
+						leftTables = []*gmodel.Table{table.Rename(tmpTable)}
+						t.globalState.SetTableAlias(table.Name(), tmpTable)
+					} else {
+						leftTables = []*gmodel.Table{table}
+					}
 					break
 				}
 			}
@@ -51,10 +55,14 @@ func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join) {
 			panic("unreachable")
 		}
 		if table := t.globalState.findTableByName(right.Source.(*ast.TableName).Name.L); table != nil {
-			tmpTable := t.globalState.CreateTmpTable()
-			right.AsName = model.NewCIStr(tmpTable)
-			rightTable = table.Rename(tmpTable)
-			t.globalState.SetTableAlias(table.Name(), tmpTable)
+			if asName {
+				tmpTable := t.globalState.CreateTmpTable()
+				right.AsName = model.NewCIStr(tmpTable)
+				rightTable = table.Rename(tmpTable)
+				t.globalState.SetTableAlias(table.Name(), tmpTable)
+			} else {
+				rightTable = table
+			}
 		} else {
 			panic("unreachable")
 		}

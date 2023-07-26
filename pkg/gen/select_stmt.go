@@ -43,7 +43,9 @@ func (t *TiDBSelectStmtGen) GenPQSSelectStmt(pivotRows map[string]*connection.Qu
 }
 
 func (t *TiDBSelectStmtGen) GenSelectStmt(
+	pivotRowsColumns []*gmodel.Column,
 	usedTables []*gmodel.Table) (*ast.SelectStmt, string, error) {
+	t.globalState.PivotColumns = pivotRowsColumns
 	t.globalState.SetInUsedTable(usedTables)
 	return t.CommonGen()
 }
@@ -57,10 +59,18 @@ func (t *TiDBSelectStmtGen) CommonGen() (selectStmtNode *ast.SelectStmt, sql str
 			Fields: []*ast.SelectField{},
 		},
 	}
-	selectStmtNode.From = t.TableRefsClause()
-	t.walkTableRefs(selectStmtNode.From.TableRefs)
+	selectStmtNode.From = t.TableRefsClause(false)
+	t.walkTableRefs(selectStmtNode.From.TableRefs, false)
 	selectStmtNode.Where = t.ConditionClause()
 	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
+
+	for _, column := range t.globalState.PivotColumns {
+		selectField := ast.SelectField{
+			Expr: column.ToColumnNameExprWithoutTableName(),
+		}
+		selectStmtNode.Fields.Fields = append(selectStmtNode.Fields.Fields, &selectField)
+	}
+
 	sql, err = util.BufferOut(selectStmtNode)
 	return selectStmtNode, sql, nil
 }
@@ -74,8 +84,8 @@ func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, c
 			Fields: []*ast.SelectField{},
 		},
 	}
-	selectStmtNode.From = t.TableRefsClause()
-	t.walkTableRefs(selectStmtNode.From.TableRefs)
+	selectStmtNode.From = t.TableRefsClause(true)
+	t.walkTableRefs(selectStmtNode.From.TableRefs, true)
 	selectStmtNode.Where = t.ConditionClause()
 	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
 	columnInfos, updatedPivotRows = t.walkResultFields(selectStmtNode)
@@ -90,7 +100,7 @@ func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, c
 //	Join     t3
 //
 // t1    t2
-func (t *TiDBSelectStmtGen) TableRefsClause() *ast.TableRefsClause {
+func (t *TiDBSelectStmtGen) TableRefsClause(randUseTables bool) *ast.TableRefsClause {
 	clause := &ast.TableRefsClause{TableRefs: &ast.Join{
 		Left:  &ast.TableName{},
 		Right: &ast.TableName{},
@@ -111,7 +121,7 @@ func (t *TiDBSelectStmtGen) TableRefsClause() *ast.TableRefsClause {
 		return clause
 	}
 	log.Info("TableRefsClause", zap.Any("usedTables", usedTables))
-	if len(usedTables) != 2 {
+	if len(usedTables) != 2 && randUseTables {
 		usedTables = util.ChoiceSubset(usedTables, rand.Intn(len(usedTables)-2)+2)
 	}
 
@@ -224,7 +234,7 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 			logging.StatusLog().Info("no real name", zap.String("table", table.Name()))
 			realName = table.Name()
 		}
-		//logging.StatusLog().Info("table", zap.String("table", table.Name()), zap.String("real", realName))
+		logging.StatusLog().Info("table", zap.String("table", table.Name()), zap.String("real", realName))
 		for _, column := range table.Columns() {
 			asname := t.globalState.CreateTmpColumn()
 			selectField := ast.SelectField{
@@ -243,6 +253,6 @@ func (t *TiDBSelectStmtGen) walkResultFields(node *ast.SelectStmt) ([]gmodel.Col
 			row[asname] = rows
 		}
 	}
-	//logging.StatusLog().Debug("walkResultFields", zap.Any("columns", columns))
+	logging.StatusLog().Info("walkResultFields", zap.Any("columns", columns))
 	return columns, row
 }

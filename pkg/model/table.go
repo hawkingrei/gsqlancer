@@ -73,6 +73,27 @@ func (c *Column) ToColumnNameExpr(tableName string) *ast.ColumnNameExpr {
 	}
 }
 
+// ToModel converts to ast model
+func (c *Column) ToColumnNameExprWithoutTableName() *ast.ColumnNameExpr {
+	table := c.Table
+	if c.AliasTable.String() != "" {
+		table = c.AliasTable
+	}
+	name := c.Name()
+	if c.AliasTable.String() != "" {
+		name = c.AliasName.String()
+	}
+	if c.Table.String() != "" {
+		table = c.Table
+	}
+	return &ast.ColumnNameExpr{
+		Name: &ast.ColumnName{
+			Table: table,
+			Name:  model.NewCIStr(name),
+		},
+	}
+}
+
 type Table struct {
 	Refer     *ast.ReferenceDef // Used for foreign key.
 	Option    *ast.IndexOption  // Index Options

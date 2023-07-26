@@ -19,6 +19,7 @@ import (
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/dumpling/context"
 	"github.com/pingcap/tidb/parser/ast"
+	tidbmodel "github.com/pingcap/tidb/parser/model"
 	"github.com/pingcap/tidb/util/mathutil"
 	"go.uber.org/zap"
 )
@@ -120,12 +121,20 @@ func (e *Executor) progress() bool {
 }
 
 func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
+
 	usedTables := e.state.GetRandTables()
 	if len(usedTables) > 2 {
 		usedTables = util.ChoiceSubset(usedTables, mathutil.Min(rand.Intn(len(usedTables)-2)+2, 5))
 	}
+	var columns []*model.Column
+	for _, table := range usedTables {
+		column := util.Choice(table.Columns())
+		column.Table = tidbmodel.NewCIStr(table.Name())
+		columns = append(columns, column)
+	}
+
 	//log.Info("DoNoRECAndTLP", zap.Any("usedTables", usedTables))
-	selectStmtNode, _, err := e.gen.SelectTable(usedTables)
+	selectStmtNode, _, err := e.gen.SelectTable(columns, usedTables)
 	if err != nil {
 		logging.StatusLog().Error("generate normal SQL statement failed", zap.Error(err))
 	}

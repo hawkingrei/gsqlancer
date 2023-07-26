@@ -39,8 +39,8 @@ func (g *generator) TiflashReplicaStmt(table string, replicaNum int) *model.SQL 
 	return g.tiflashReplicaStmtGen.Build(table, replicaNum).Generate()
 }
 
-func (g *generator) SelectTable(usedTables []*model.Table) (selectStmtNode *ast.SelectStmt, sql string, err error) {
-	return g.selectGen.GenSelectStmt(usedTables)
+func (g *generator) SelectTable(pivotRows []*model.Column, usedTables []*model.Table) (selectStmtNode *ast.SelectStmt, sql string, err error) {
+	return g.selectGen.GenSelectStmt(pivotRows, usedTables)
 }
 
 func (g *generator) InsertTable(table string) (*model.SQL, error) {
@@ -52,6 +52,6 @@ func (g *generator) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem,
 	return g.selectGen.GenPQSSelectStmt(pivotRows, usedTables)
 }
 
-func (g *generator) SetVariable() *model.SQL {
+func (g *generator) SetVariable() string {
 	return g.setGen.Gen()
 }

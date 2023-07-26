@@ -31,6 +31,7 @@ type TiDBState struct {
 	tmpTableIDGen         atomic.Uint32
 	TableAlias            map[string]string
 	PivotRows             map[string]*connection.QueryItem
+	PivotColumns          []*model.Column
 	unwrapPivotRows       map[string]interface{}
 	recentCreateTableName string
 }
@@ -50,6 +51,7 @@ func (t *TiDBState) Reset() {
 	maps.Clear(t.InUsedTable)
 	maps.Clear(t.TableAlias)
 	maps.Clear(t.PivotRows)
+	t.PivotColumns = t.PivotColumns[:0]
 	t.tmpColIndex.Store(0)
 	t.tmpTableIDGen.Store(0)
 }
