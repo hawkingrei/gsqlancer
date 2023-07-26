@@ -7,6 +7,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/connection/realdb"
 	"github.com/hawkingrei/gsqlancer/pkg/executor"
 	"github.com/hawkingrei/gsqlancer/pkg/report"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/log"
 	tidbutil "github.com/pingcap/tidb/util"
 	"go.uber.org/zap"
@@ -43,8 +44,10 @@ func (s *SQLancer) Run() {
 }
 
 func (s *SQLancer) Stop() {
+	logging.StatusLog().Info("stopping gsqlancer")
 	close(s.exitCh)
 	s.wg.Wait()
+	logging.StatusLog().Info("stop gsqlancer")
 }
 
 func (s *SQLancer) tick() {

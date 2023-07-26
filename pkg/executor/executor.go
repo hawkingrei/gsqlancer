@@ -78,13 +78,13 @@ func (e *Executor) Run() {
 	for {
 		select {
 		case <-e.exitCh:
+			logging.StatusLog().Info("executor exiting")
 			return
 		default:
 		}
 		for !e.Do() {
 			continue
 		}
-		logging.StatusLog().Info("Done")
 		e.Next()
 	}
 }
@@ -182,6 +182,7 @@ func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
 		logging.StatusLog().Error("last round SQLs", zap.Strings("", sqlInOneGroup))
 		logging.StatusLog().Fatal("NoREC/TLP data verified failed")
 	}
+	logging.StatusLog().Info("check finished", zap.Int("batch", e.batch), zap.Int("round", e.roundInBatch), zap.Bool("result", correct))
 	//log.L().Info("check finished", zap.String("approach", "NoREC"), zap.Int("batch", p.batch), zap.Int("round", p.roundInBatch), zap.Bool("result", correct))
 	return true
 }
@@ -217,7 +218,6 @@ func (e *Executor) DoPGS() (success bool) {
 		}
 		return true
 	}
-	log.Info("pass")
 	return true
 }
 
