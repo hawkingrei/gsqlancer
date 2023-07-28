@@ -95,7 +95,7 @@ func (e *Executor) Do() bool {
 			sql := "select count(*) from " + tbl
 			var line uint64
 			e.conn.QueryRowContext(e.ctx, sql).Scan(&line)
-			if line < 50 {
+			if line < 25 {
 				continue
 			}
 			sql = fmt.Sprintf("delete from %s limit %d", tbl, line/2)
@@ -104,7 +104,7 @@ func (e *Executor) Do() bool {
 				logging.StatusLog().Error("fail to delete table", zap.Error(err))
 				return false
 			} else {
-				logging.StatusLog().Info("delete data", zap.String("table", tbl))
+				logging.StatusLog().Debug("delete data", zap.String("table", tbl))
 			}
 		}
 	}

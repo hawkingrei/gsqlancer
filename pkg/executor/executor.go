@@ -129,7 +129,6 @@ func (e *Executor) ChoosePivotedRow() (map[string]*connection.QueryItem, []*mode
 		sql := fmt.Sprintf("SELECT * FROM %s ORDER BY RAND() LIMIT 1;", i.Name())
 		exeRes, err := e.conn.Select(e.ctx, sql)
 		if err != nil {
-			logging.SQLLOG().Error(sql, zap.Error(err))
 			return nil, nil, err
 		}
 		if len(exeRes) > 0 {
