@@ -22,7 +22,6 @@ func (e *Executor) DoPGS() (success bool) {
 	if err != nil {
 		logging.StatusLog().Fatal("generate PQS statement error", zap.Error(err))
 	}
-	log.Info("start query")
 	resultRows, err := e.conn.Select(e.ctx, selectSQL)
 	if err != nil {
 		logging.StatusLog().Info("select", zap.Error(err))

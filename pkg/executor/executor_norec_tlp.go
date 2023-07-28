@@ -1,6 +1,8 @@
 package executor
 
 import (
+	"math/rand"
+
 	"github.com/hawkingrei/gsqlancer/pkg/connection"
 	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/transformer"
@@ -8,6 +10,7 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/tidb/parser/ast"
 	tidbmodel "github.com/pingcap/tidb/parser/model"
+	"github.com/pingcap/tidb/util/mathutil"
 	"go.uber.org/zap"
 )
 
