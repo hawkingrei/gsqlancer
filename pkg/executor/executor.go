@@ -121,10 +121,10 @@ func (e *Executor) progress() bool {
 }
 
 func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
-
 	usedTables := e.state.GetRandTables()
 	if len(usedTables) > 2 {
-		usedTables = util.ChoiceSubset(usedTables, mathutil.Min(rand.Intn(len(usedTables)-2)+2, 5))
+		cnt := mathutil.Min(rand.Intn(len(usedTables)-2)+2, e.cfg.SelectDepth())
+		usedTables = util.ChoiceSubset(usedTables, cnt)
 	}
 	var columns []*model.Column
 	for _, table := range usedTables {
@@ -162,13 +162,15 @@ func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
 	}
 	sqlInOneGroup := make([]string, 0)
 	resultSet := make([][]connection.QueryItems, 0)
+	logging.StatusLog().Info("DoNoRECAndTLP", zap.Int("nodesArr", len(nodesArr)))
+	var sql string
+	var resultRows []connection.QueryItems
 	for _, node := range nodesArr {
-		sql, err := util.BufferOut(node)
+		sql, err = util.BufferOut(node)
 		if err != nil {
 			logging.StatusLog().Error("err on restoring", zap.Error(err))
 		} else {
-			resultRows, err := e.conn.Select(e.ctx, sql)
-			logging.StatusLog().Debug(sql)
+			resultRows, err = e.conn.Select(e.ctx, sql)
 			if err != nil {
 				logging.StatusLog().Error("execSelect failed", zap.Error(err), zap.String("sql", sql))
 				return false
@@ -181,6 +183,27 @@ func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
 	if !correct {
 		logging.StatusLog().Error("last round SQLs", zap.Strings("", sqlInOneGroup))
 		logging.StatusLog().Fatal("NoREC/TLP data verified failed")
+	}
+	if correct {
+		variableGen := e.gen.setGen.Rand()
+		logging.StatusLog().Info("start checking variable", zap.String("name", variableGen.Name()))
+		e.conn.MustExec(e.ctx, variableGen.GenVariableOn())
+		resultRows1, err := e.conn.Select(e.ctx, sql)
+		if err != nil {
+			logging.StatusLog().Error("execSelect failed", zap.Error(err), zap.String("sql", sql))
+			return false
+		}
+		e.conn.MustExec(e.ctx, variableGen.GenVariableOff())
+		resultRows2, err := e.conn.Select(e.ctx, sql)
+		if err != nil {
+			logging.StatusLog().Error("execSelect failed", zap.Error(err), zap.String("sql", sql))
+			return false
+		}
+		correct := checkResultSet([][]connection.QueryItems{resultRows1, resultRows2}, true)
+		if !correct {
+			logging.StatusLog().Error("last round SQLs", zap.Strings("", sqlInOneGroup))
+			logging.StatusLog().Fatal("NoREC/TLP data verified failed")
+		}
 	}
 	logging.StatusLog().Info("check finished", zap.Int("batch", e.batch), zap.Int("round", e.roundInBatch), zap.Bool("result", correct))
 	//log.L().Info("check finished", zap.String("approach", "NoREC"), zap.Int("batch", p.batch), zap.Int("round", p.roundInBatch), zap.Bool("result", correct))

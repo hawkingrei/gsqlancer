@@ -24,7 +24,6 @@ func (a *TiDBAnalyzeTable) GenerateAnalyzeTables() *model.SQL {
 			SQLTable: t,
 			SQLStmt:  "analyze table " + t,
 		}
-
 	}
 	return nil
 }

@@ -2,14 +2,16 @@ package setgen
 
 import (
 	"github.com/hawkingrei/gsqlancer/pkg/gen/setgen/variablegen"
+	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 )
 
 type VariableGen interface {
-	GenVariableOn() string
-	GenVariableOff() string
+	Name() string
+	GenVariableOn() *model.SQL
+	GenVariableOff() *model.SQL
 	IsSwitch() bool
-	Gen() string
+	Gen() *model.SQL
 }
 
 var GlobalVariableGen = []VariableGen{
@@ -22,6 +24,10 @@ func NewSetVariableGen() *SetVariableGen {
 	return &SetVariableGen{}
 }
 
-func (s *SetVariableGen) Gen() string {
+func (s *SetVariableGen) Gen() *model.SQL {
 	return util.Choice(GlobalVariableGen).Gen()
+}
+
+func (s *SetVariableGen) Rand() VariableGen {
+	return util.Choice(GlobalVariableGen)
 }

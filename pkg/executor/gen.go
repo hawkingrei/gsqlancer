@@ -52,6 +52,6 @@ func (g *generator) GenPQSSelectStmt(pivotRows map[string]*connection.QueryItem,
 	return g.selectGen.GenPQSSelectStmt(pivotRows, usedTables)
 }
 
-func (g *generator) SetVariable() string {
+func (g *generator) SetVariable() *model.SQL {
 	return g.setGen.Gen()
 }

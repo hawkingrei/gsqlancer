@@ -3,6 +3,7 @@ package variablegen
 import (
 	"fmt"
 
+	"github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 )
 
@@ -20,21 +21,27 @@ func NewBoolGen(name string, defaultStats bool) *BoolGen {
 	}
 }
 
-func (b *BoolGen) GenVariableOn() string {
+func (b *BoolGen) GenVariableOn() *model.SQL {
 	b.status = true
-	return fmt.Sprintf("set %s=1", b.name)
+	return &model.SQL{
+		SQLType: model.SQLTypeSetVariable,
+		SQLStmt: fmt.Sprintf("set %s=1", b.name),
+	}
 }
 
-func (b *BoolGen) GenVariableOff() string {
+func (b *BoolGen) GenVariableOff() *model.SQL {
 	b.status = false
-	return fmt.Sprintf("set %s=0", b.name)
+	return &model.SQL{
+		SQLType: model.SQLTypeSetVariable,
+		SQLStmt: fmt.Sprintf("set %s=1", b.name),
+	}
 }
 
 func (b *BoolGen) IsSwitch() bool {
 	return true
 }
 
-func (b *BoolGen) Gen() string {
+func (b *BoolGen) Gen() *model.SQL {
 	value := util.RdBool()
 	defer func() {
 		b.status = value

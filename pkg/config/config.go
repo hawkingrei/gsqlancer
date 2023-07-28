@@ -37,6 +37,7 @@ func DefaultConfig() *Config {
 		},
 		enablePartition:   true,
 		MaxCreateTable:    10,
+		selectDepth:       3,
 		Concurrency:       1,
 		MaxTestTime:       6 * time.Hour,
 		db:                *realdb.DefaultConfig(),
@@ -59,4 +60,8 @@ func (c *Config) DBConfig() *realdb.Config {
 
 func (c *Config) Log() *logging.LogConfig {
 	return c.log
+}
+
+func (c *Config) SelectDepth() int {
+	return c.selectDepth
 }

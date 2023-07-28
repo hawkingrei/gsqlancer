@@ -24,6 +24,7 @@ const (
 	SQLTypeCreateDatabase
 	SQLTypeDropDatabase
 	SQLTypeAnalyzeTable
+	SQLTypeSetVariable
 )
 
 // SQL struct
@@ -77,6 +78,8 @@ func (t SQLType) String() string {
 		return "SQLTypeCreateDatabase"
 	case SQLTypeDropDatabase:
 		return "SQLTypeDropDatabase"
+	case SQLTypeSetVariable:
+		return "SQLTypeSetVariable"
 	default:
 		return "SQLTypeUnknown"
 	}
