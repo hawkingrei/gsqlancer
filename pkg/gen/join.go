@@ -6,6 +6,7 @@ import (
 	gmodel "github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/parser/ast"
@@ -16,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join, asName bool) {
+func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join, asName bool, depth int) {
 	if node.Right == nil {
 		if node, ok := node.Left.(*ast.TableSource); ok {
 			if tn, ok := node.Source.(*ast.TableName); ok {
@@ -35,7 +36,7 @@ func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join, asName bool) {
 		)
 		switch node := node.Left.(type) {
 		case *ast.Join:
-			t.walkTableRefs(node, asName)
+			t.walkTableRefs(node, asName, depth+1)
 			leftTables = t.globalState.GetResultTable()
 		case *ast.TableSource:
 			if tn, ok := node.Source.(*ast.TableName); ok {
@@ -69,23 +70,24 @@ func (t *TiDBSelectStmtGen) walkTableRefs(node *ast.Join, asName bool) {
 		allTables := append(leftTables, rightTable)
 		t.globalState.SetResultTable(allTables)
 		node.On = &ast.OnCondition{}
-		node.On.Expr = t.ConditionClause()
+		node.On.Expr = t.ConditionClause(depth)
 		return
 	}
 	panic("unreachable")
 }
 
 // ConditionClause is to generate a ConditionClause
-func (t *TiDBSelectStmtGen) ConditionClause() ast.ExprNode {
+func (t *TiDBSelectStmtGen) ConditionClause(depth int) ast.ExprNode {
+	logging.StatusLog().Info("ConditionClause")
 	// TODO: support subquery
 	// TODO: more ops
 	exprType := types.TypeNumberLikeArg
 	var err error
 	retry := 10
-	node, val, err := t.generateExpr(exprType, t.c.Depth)
+	node, val, err := t.generateExpr(exprType, depth)
 	for err != nil && retry > 0 {
 		log.L().Error("generate where expr error", zap.Error(err))
-		node, val, err = t.generateExpr(exprType, t.c.Depth)
+		node, val, err = t.generateExpr(exprType, depth)
 		retry--
 	}
 	if err != nil {
@@ -128,12 +130,13 @@ func (*TiDBSelectStmtGen) rectifyCondition(node ast.ExprNode, val parser_driver.
 	if n, ok := node.(*ast.ParenthesesExpr); ok {
 		node = n.Expr
 	}
+	logging.StatusLog().Info("ConditionClause pass")
 	return node
 }
 
 func (t *TiDBSelectStmtGen) generateExpr(valueTp uint64, depth int) (ast.ExprNode, parser_driver.ValueExpr, error) {
 	if valueTp == 0 {
-		log.L().Warn("required return type is empty")
+		logging.StatusLog().Info("required return type is empty")
 		e := parser_driver.ValueExpr{}
 		e.SetValue(nil)
 		return ast.NewValueExpr(nil, "", ""), e, nil
@@ -160,7 +163,8 @@ func (t *TiDBSelectStmtGen) generateExpr(valueTp uint64, depth int) (ast.ExprNod
 	}
 
 	// generate leaf node
-	if depth == 0 {
+	if depth == t.c.Depth() {
+		logging.StatusLog().Info("depth zero")
 		if rand.Intn(3) > 1 {
 			exprNode, value, err := t.gen.columnExpr(tp)
 			if err == nil {
@@ -170,11 +174,11 @@ func (t *TiDBSelectStmtGen) generateExpr(valueTp uint64, depth int) (ast.ExprNod
 		exprNode, value := t.gen.constValueExpr(tp)
 		return exprNode, value, nil
 	}
-
+	logging.StatusLog().Info("RandOpFn", zap.Any("tp", tp))
 	// select a function with return type tp
 	fn, err := util.OpFuncGroupByRet.RandOpFn(tp)
 	if err != nil {
-		log.L().Warn("generate fn or op failed", zap.Error(err))
+		logging.StatusLog().Warn("generate fn or op failed", zap.Error(err))
 		// if no op/fn satisfied requirement
 		// generate const instead
 		exprNode, value := t.gen.constValueExpr(tp)

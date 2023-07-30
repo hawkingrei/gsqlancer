@@ -40,7 +40,7 @@ func (e *Executor) DoNoRECAndTLP(approach testingApproach) bool {
 		transformers = append(
 			transformers,
 			&transformer.TLPTrans{
-				Expr: &ast.ParenthesesExpr{Expr: e.gen.selectGen.ConditionClause()},
+				Expr: &ast.ParenthesesExpr{Expr: e.gen.selectGen.ConditionClause(0)},
 				Tp:   transformer.RandTLPType(),
 			},
 		)

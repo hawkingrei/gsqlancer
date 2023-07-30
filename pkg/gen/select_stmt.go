@@ -11,7 +11,6 @@ import (
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
 	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
-	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/model"
 	"github.com/pingcap/tidb/parser/mysql"
@@ -60,8 +59,8 @@ func (t *TiDBSelectStmtGen) CommonGen() (selectStmtNode *ast.SelectStmt, sql str
 		},
 	}
 	selectStmtNode.From = t.TableRefsClause(false)
-	t.walkTableRefs(selectStmtNode.From.TableRefs, false)
-	selectStmtNode.Where = t.ConditionClause()
+	t.walkTableRefs(selectStmtNode.From.TableRefs, false, 0)
+	selectStmtNode.Where = t.ConditionClause(0)
 	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
 
 	for _, column := range t.globalState.PivotColumns {
@@ -85,8 +84,8 @@ func (t *TiDBSelectStmtGen) Gen() (selectStmtNode *ast.SelectStmt, sql string, c
 		},
 	}
 	selectStmtNode.From = t.TableRefsClause(true)
-	t.walkTableRefs(selectStmtNode.From.TableRefs, true)
-	selectStmtNode.Where = t.ConditionClause()
+	t.walkTableRefs(selectStmtNode.From.TableRefs, true, 0)
+	selectStmtNode.Where = t.ConditionClause(0)
 	selectStmtNode.TableHints = t.tableHintsExpr(t.globalState.GetInUsedTable())
 	columnInfos, updatedPivotRows = t.walkResultFields(selectStmtNode)
 	sql, err = util.BufferOut(selectStmtNode)
@@ -106,7 +105,7 @@ func (t *TiDBSelectStmtGen) TableRefsClause(randUseTables bool) *ast.TableRefsCl
 		Right: &ast.TableName{},
 	}}
 	usedTables := t.globalState.GetRandTableList()
-	log.Info("GetRandTableList", zap.Any("usedTables", usedTables))
+	//log.Info("GetRandTableList", zap.Any("usedTables", usedTables))
 	var node = clause.TableRefs
 	// TODO: it works, but need to refactor
 	if len(usedTables) == 1 {
@@ -120,11 +119,10 @@ func (t *TiDBSelectStmtGen) TableRefsClause(randUseTables bool) *ast.TableRefsCl
 		}
 		return clause
 	}
-	log.Info("TableRefsClause", zap.Any("usedTables", usedTables))
+	//log.Info("TableRefsClause", zap.Any("usedTables", usedTables))
 	if len(usedTables) != 2 && randUseTables {
 		usedTables = util.ChoiceSubset(usedTables, rand.Intn(len(usedTables)-2)+2)
 	}
-
 	for i := len(usedTables) - 1; i >= 1; i-- {
 		var tp ast.JoinType
 		if !t.c.EnableLeftRightJoin {

@@ -25,7 +25,7 @@ type Config struct {
 	EnableLeftRightJoin   bool          `toml:"enable_left_right_join"`
 	IsInUpdateDeleteStmt  bool          `toml:"is_in_update_delete_stmt"`
 	IsInExprIndex         bool          `toml:"is_in_expr_index"`
-	Depth                 int           `toml:"depth"`
+	depth                 int           `toml:"depth"`
 	Hint                  bool          `toml:"hint"`
 }
 
@@ -41,6 +41,7 @@ func DefaultConfig() *Config {
 		Concurrency:       1,
 		MaxTestTime:       6 * time.Hour,
 		db:                *realdb.DefaultConfig(),
+		depth:             3,
 		EnablePQSApproach: false,
 		EnableTLPApproach: true,
 	}
@@ -64,4 +65,8 @@ func (c *Config) Log() *logging.LogConfig {
 
 func (c *Config) SelectDepth() int {
 	return c.selectDepth
+}
+
+func (c *Config) Depth() int {
+	return c.depth
 }
