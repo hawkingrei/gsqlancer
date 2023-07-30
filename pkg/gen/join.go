@@ -184,7 +184,7 @@ func (t *TiDBSelectStmtGen) generateExpr(valueTp uint64, depth int) (ast.ExprNod
 		exprNode, value := t.gen.constValueExpr(tp)
 		return exprNode, value, nil
 	}
-
+	logging.StatusLog().Info("fn", zap.String("name", fn.GetName()))
 	pthese := ast.ParenthesesExpr{}
 	var value parser_driver.ValueExpr
 	pthese.Expr, value, err = fn.Node(func(childTp uint64) (ast.ExprNode, parser_driver.ValueExpr, error) {
