@@ -178,7 +178,7 @@ func (t *TiDBSelectStmtGen) generateExpr(valueTp uint64, depth int) (ast.ExprNod
 	// select a function with return type tp
 	fn, err := util.OpFuncGroupByRet.RandOpFn(tp)
 	if err != nil {
-		logging.StatusLog().Warn("generate fn or op failed", zap.Error(err))
+		logging.StatusLog().Error("generate fn or op failed", zap.Error(err))
 		// if no op/fn satisfied requirement
 		// generate const instead
 		exprNode, value := t.gen.constValueExpr(tp)
