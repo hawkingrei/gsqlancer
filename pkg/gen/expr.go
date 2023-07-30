@@ -22,6 +22,7 @@ import (
 	gmodel "github.com/hawkingrei/gsqlancer/pkg/model"
 	"github.com/hawkingrei/gsqlancer/pkg/types"
 	"github.com/hawkingrei/gsqlancer/pkg/util"
+	"github.com/hawkingrei/gsqlancer/pkg/util/logging"
 	"github.com/juju/errors"
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/parser/ast"
@@ -235,7 +236,7 @@ func (g *Generator) generateExpr(valueTp uint64, depth int) (ast.ExprNode, parse
 		exprNode, value := g.constValueExpr(tp)
 		return exprNode, value, nil
 	}
-
+	logging.StatusLog().Info("fn", zap.String("name", fn.GetName()))
 	pthese := ast.ParenthesesExpr{}
 	var value parserdriver.ValueExpr
 	pthese.Expr, value, err = fn.Node(func(childTp uint64) (ast.ExprNode, parserdriver.ValueExpr, error) {
