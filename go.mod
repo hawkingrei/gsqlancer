@@ -1,11 +1,11 @@
 module github.com/hawkingrei/gsqlancer
 
-go 1.20
+go 1.21
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/emirpasic/gods v1.18.1
 	github.com/go-sql-driver/mysql v1.7.0
+	github.com/google/uuid v1.3.0
 	github.com/juju/errors v0.0.0-20181118221551-089d3ea4e4d5
 	github.com/pingcap/errors v0.11.5-0.20221009092201-b66cddb77c32
 	github.com/pingcap/log v1.1.1-0.20230317032135-a0d097d16e22
@@ -15,6 +15,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
@@ -59,6 +60,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
+	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
@@ -70,7 +72,6 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20211122183932-1daafda22083 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
@@ -161,7 +162,6 @@ require (
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/grpc v1.54.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0 // indirect
